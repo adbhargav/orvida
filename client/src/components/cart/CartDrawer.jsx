@@ -5,7 +5,7 @@ import { useCart } from '../../context/CartContext';
 export default function CartDrawer() {
   const navigate = useNavigate();
   const {
-    
+  
     cartItems,
     isCartOpen,
     setIsCartOpen,
