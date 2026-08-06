@@ -2,7 +2,6 @@ import React from 'react';
 import { X, ShoppingBag, Trash2, ArrowRight, Sparkles, Tag, Check, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-
 export default function CartDrawer() {
   const navigate = useNavigate();
   const {
