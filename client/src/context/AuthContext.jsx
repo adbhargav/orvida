@@ -13,6 +13,40 @@ export const AuthProvider = ({ children }) => {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  const loginWithEmail = (email, password) => {
+    const nameFromEmail = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ');
+    const formattedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
+    const mockUser = {
+      uid: `usr_${Date.now()}`,
+      name: formattedName || 'Luxury Member',
+      email: email,
+      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      phone: '+91 98765 43210',
+      isAdmin: false,
+      memberSince: 'August 2026'
+    };
+    setUser(mockUser);
+    localStorage.setItem('orvida_user', JSON.stringify(mockUser));
+    setIsAuthModalOpen(false);
+    return mockUser;
+  };
+
+  const signupWithEmail = (name, email, password) => {
+    const mockUser = {
+      uid: `usr_${Date.now()}`,
+      name: name,
+      email: email,
+      photoURL: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+      phone: '+91 98765 43210',
+      isAdmin: false,
+      memberSince: 'August 2026'
+    };
+    setUser(mockUser);
+    localStorage.setItem('orvida_user', JSON.stringify(mockUser));
+    setIsAuthModalOpen(false);
+    return mockUser;
+  };
+
   const loginWithGoogle = () => {
     const mockUser = {
       uid: 'firebase_usr_998234',
@@ -40,6 +74,8 @@ export const AuthProvider = ({ children }) => {
       isAdmin: user?.isAdmin || false,
       isAuthModalOpen,
       setIsAuthModalOpen,
+      loginWithEmail,
+      signupWithEmail,
       loginWithGoogle,
       logout
     }}>

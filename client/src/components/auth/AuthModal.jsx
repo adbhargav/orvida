@@ -8,41 +8,41 @@ export default function AuthModal() {
   if (!isAuthModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 glass-dark bg-black/80 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-[#0B3D2E] text-[#F7F5EF] w-full max-w-md rounded-3xl p-8 border border-[#C9972B]/60 shadow-2xl relative text-center">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+      <div className="bg-white text-slate-900 w-full max-w-md rounded-3xl p-8 border border-gray-200 shadow-2xl relative text-center">
         
         {/* Close Button */}
         <button
           onClick={() => setIsAuthModalOpen(false)}
-          className="absolute top-4 right-4 p-2 text-[#F7F5EF]/70 hover:text-white transition"
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-900 transition"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Brand Logo & Header */}
         <div className="flex flex-col items-center mb-6">
-          <div className="p-3 rounded-full bg-[#0A3324] border border-[#8A6A16] mb-3">
-            <Leaf className="w-8 h-8 text-[#F0D585]" />
+          <div className="p-3 rounded-full bg-[#F0F5F2] border border-[#154734]/30 mb-3">
+            <Leaf className="w-8 h-8 text-[#154734]" />
           </div>
-          <h2 className="font-display font-extrabold text-2xl tracking-widest text-gold-gradient">
+          <h2 className="font-display font-extrabold text-2xl tracking-widest text-[#154734]">
             ORIVIDA
           </h2>
-          <p className="font-serif italic text-xs text-[#F0D585] mt-1">
+          <p className="font-serif italic text-xs text-slate-500 mt-1">
             "Our Passion, UR Luxury"
           </p>
         </div>
 
-        <h3 className="font-display font-semibold text-lg text-white mb-2">
+        <h3 className="font-display font-bold text-lg text-slate-900 mb-2">
           Join the ORIVIDA Luxury Circle
         </h3>
-        <p className="text-xs text-[#F7F5EF]/80 mb-6 leading-relaxed">
+        <p className="text-xs text-slate-600 mb-6 leading-relaxed">
           Sign in to track orders, save rare botanical wishlists, access private artisan drops, and enjoy express checkout.
         </p>
 
         {/* Brand Google Sign-In Button */}
         <button
           onClick={loginWithGoogle}
-          className="w-full bg-[#FAF8F3] hover:bg-white text-[#1B1B1B] font-bold py-3.5 px-6 rounded-full border-2 border-[#C9972B] flex items-center justify-center gap-3 shadow-xl hover:scale-105 transition duration-300 mb-6 group"
+          className="w-full bg-white hover:bg-gray-50 text-slate-900 font-bold py-3.5 px-6 rounded-full border border-gray-300 flex items-center justify-center gap-3 shadow-md hover:scale-105 transition duration-300 mb-6 group"
         >
           {/* Google SVG Logo */}
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -63,18 +63,18 @@ export default function AuthModal() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          <span className="text-xs tracking-wider group-hover:text-[#0B3D2E]">
+          <span className="text-xs tracking-wider group-hover:text-[#154734]">
             CONTINUE WITH GOOGLE
           </span>
         </button>
 
         {/* Benefits Trust Row */}
-        <div className="pt-4 border-t border-[#8A6A16]/30 grid grid-cols-2 gap-2 text-[10px] text-[#F7F5EF]/70">
+        <div className="pt-4 border-t border-gray-100 grid grid-cols-2 gap-2 text-[10px] text-slate-500 font-medium">
           <span className="flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#F0D585]" /> Secure Encryption
+            <ShieldCheck className="w-3.5 h-3.5 text-[#154734]" /> Secure Encryption
           </span>
           <span className="flex items-center justify-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-[#F0D585]" /> Exclusive Member Perks
+            <Sparkles className="w-3.5 h-3.5 text-[#154734]" /> Exclusive Member Perks
           </span>
         </div>
 

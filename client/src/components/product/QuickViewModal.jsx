@@ -25,20 +25,20 @@ export default function QuickViewModal({ product, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 glass-dark bg-black/80 flex items-center justify-center p-4 md:p-6 animate-fadeIn">
-      <div className="bg-[#FAF8F3] text-[#1B1B1B] w-full max-w-4xl rounded-3xl overflow-hidden border border-[#C9972B] shadow-2xl relative grid grid-cols-1 md:grid-cols-2 max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 md:p-6 animate-fadeIn">
+      <div className="bg-white text-slate-900 w-full max-w-4xl rounded-3xl overflow-hidden border border-gray-200 shadow-2xl relative grid grid-cols-1 md:grid-cols-2 max-h-[90vh]">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-[#0A3324] text-[#F0D585] hover:text-white transition shadow-lg"
+          className="absolute top-4 right-4 z-20 p-2 rounded-full bg-gray-100 text-slate-700 hover:bg-[#154734] hover:text-white transition shadow-sm"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Gallery Preview Left Column */}
-        <div className="p-6 bg-[#F2EFE6] flex flex-col justify-between overflow-y-auto">
-          <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 border border-[#C9972B]/30 shadow-md">
+        <div className="p-6 bg-gray-50 flex flex-col justify-between overflow-y-auto border-r border-gray-100">
+          <div className="relative aspect-square rounded-2xl overflow-hidden mb-4 border border-gray-200 shadow-sm bg-white">
             <img
               src={product.images[activeImgIndex]?.url || product.images[0]?.url}
               alt={product.name}
@@ -53,7 +53,7 @@ export default function QuickViewModal({ product, onClose }) {
                 key={img.id || idx}
                 onClick={() => setActiveImgIndex(idx)}
                 className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition ${
-                  activeImgIndex === idx ? 'border-[#C9972B] scale-105 shadow-md' : 'border-transparent opacity-70'
+                  activeImgIndex === idx ? 'border-[#154734] scale-105 shadow-md' : 'border-transparent opacity-70'
                 }`}
               >
                 <img src={img.url} alt="thumbnail" className="w-full h-full object-cover" />
@@ -63,13 +63,13 @@ export default function QuickViewModal({ product, onClose }) {
         </div>
 
         {/* Info Right Column */}
-        <div className="p-6 md:p-8 flex flex-col justify-between overflow-y-auto bg-[#FAF8F3]">
+        <div className="p-6 md:p-8 flex flex-col justify-between overflow-y-auto bg-white">
           <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#8A6A16]">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#154734]">
               {product.categoryName} · {product.subcategoryName}
             </span>
 
-            <h2 className="font-display font-bold text-xl md:text-2xl text-[#0B3D2E] mt-1 mb-2">
+            <h2 className="font-display font-bold text-xl md:text-2xl text-slate-900 mt-1 mb-2">
               {product.name}
             </h2>
 
@@ -80,14 +80,14 @@ export default function QuickViewModal({ product, onClose }) {
                   <Star key={i} className="w-4 h-4 fill-[#C9972B]" />
                 ))}
               </div>
-              <span className="text-xs font-semibold text-[#1B1B1B]">
+              <span className="text-xs font-semibold text-slate-700">
                 {product.avgRating} ({product.reviewCount} luxury reviews)
               </span>
             </div>
 
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-4">
-              <span className="font-serif font-bold text-2xl text-[#0B3D2E]">
+              <span className="font-serif font-bold text-2xl text-[#154734]">
                 ₹{currentPrice.toLocaleString('en-IN')}
               </span>
               {product.discountPrice && (
@@ -97,14 +97,14 @@ export default function QuickViewModal({ product, onClose }) {
               )}
             </div>
 
-            <p className="text-xs text-[#1B1B1B]/80 leading-relaxed mb-6">
+            <p className="text-xs text-slate-600 leading-relaxed mb-6">
               {product.shortDescription}
             </p>
 
             {/* Variants */}
             {product.variants?.length > 0 && (
               <div className="mb-6 space-y-3">
-                <label className="text-xs font-bold text-[#8A6A16] uppercase tracking-wider block">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
                   Select Specification / Finish:
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -114,8 +114,8 @@ export default function QuickViewModal({ product, onClose }) {
                       onClick={() => setSelectedVariant(v)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition ${
                         selectedVariant?.id === v.id
-                          ? 'bg-[#0B3D2E] text-[#F0D585] border-[#F0D585] shadow-md'
-                          : 'bg-white text-[#1B1B1B] border-gray-300 hover:border-[#C9972B]'
+                          ? 'bg-[#154734] text-white border-[#154734] shadow-sm'
+                          : 'bg-white text-slate-700 border-gray-300 hover:border-[#154734]'
                       }`}
                     >
                       {v.value} {v.priceDelta > 0 ? `(+₹${v.priceDelta})` : ''}
@@ -129,17 +129,17 @@ export default function QuickViewModal({ product, onClose }) {
           <div>
             {/* Quantity Stepper & Add to Cart */}
             <div className="flex gap-4 mb-4">
-              <div className="flex items-center border border-[#8A6A16]/40 rounded-full bg-white px-3">
+              <div className="flex items-center border border-gray-300 rounded-full bg-gray-50 px-3">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-2 py-1 text-base font-bold text-[#8A6A16]"
+                  className="px-2 py-1 text-base font-bold text-slate-700 hover:text-[#154734]"
                 >
                   -
                 </button>
-                <span className="px-3 text-sm font-bold text-[#1B1B1B]">{quantity}</span>
+                <span className="px-3 text-sm font-bold text-slate-900">{quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="px-2 py-1 text-base font-bold text-[#8A6A16]"
+                  className="px-2 py-1 text-base font-bold text-slate-700 hover:text-[#154734]"
                 >
                   +
                 </button>
@@ -149,13 +149,13 @@ export default function QuickViewModal({ product, onClose }) {
                 onClick={handleAddToCart}
                 className={`flex-1 py-3 px-6 rounded-full font-bold text-xs tracking-wider flex items-center justify-center gap-2 transition duration-300 ${
                   addedSuccess
-                    ? 'bg-[#0B3D2E] text-[#F0D585]'
-                    : 'bg-gold-gradient hover:bg-gold-gradient-hover text-[#0A3324] shadow-lg hover:scale-105'
+                    ? 'bg-[#154734] text-white'
+                    : 'bg-[#154734] hover:bg-[#0F3526] text-white shadow-md hover:scale-105'
                 }`}
               >
                 {addedSuccess ? (
                   <>
-                    <Check className="w-4 h-4 text-[#F0D585]" />
+                    <Check className="w-4 h-4 text-white" />
                     <span>ADDED TO CART!</span>
                   </>
                 ) : (
@@ -170,7 +170,7 @@ export default function QuickViewModal({ product, onClose }) {
             <Link
               to={`/product/${product.slug}`}
               onClick={onClose}
-              className="text-xs text-[#8A6A16] hover:text-[#0B3D2E] font-semibold flex items-center justify-center gap-1 text-center"
+              className="text-xs text-[#154734] hover:underline font-bold flex items-center justify-center gap-1 text-center"
             >
               View Full Product Details & Craftsmanship Story <ArrowRight className="w-3.5 h-3.5" />
             </Link>

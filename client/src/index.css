@@ -1,19 +1,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-emerald-default: #0B3D2E;
-  --color-emerald-deep: #0A3324;
-  --color-emerald-darker: #062319;
-  --color-emerald-light: #125440;
+  --color-emerald-default: #154734;
+  --color-emerald-deep: #0F3526;
+  --color-emerald-darker: #0B281E;
+  --color-emerald-light: #E8F2EC;
+  --color-emerald-subtle: #F0F5F2;
   
   --color-gold-light: #FFE9A8;
   --color-gold-mid: #F0D585;
   --color-gold-default: #C9972B;
   --color-gold-deep: #8A6A16;
   
-  --color-cream: #F7F5EF;
-  --color-cream-card: #FAF8F3;
-  --color-charcoal: #1B1B1B;
+  --color-cream: #FAF9F6;
+  --color-cream-card: #FFFFFF;
+  --color-cream-warm: #F4F0E8;
+  --color-charcoal: #111827;
+  --color-charcoal-muted: #4B5563;
   
   --font-display: 'Poppins', sans-serif;
   --font-serif: 'Playfair Display', serif;
@@ -21,52 +24,59 @@
   --font-sans: 'Inter', sans-serif;
 }
 
+body {
+  background-color: #FAF9F6;
+  color: #111827;
+  font-family: var(--font-body), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
 @layer utilities {
   .bg-gold-gradient {
-    background: linear-gradient(135deg, #8A6A16 0%, #C9972B 45%, #F0D585 80%, #FFE9A8 100%);
+    background: linear-gradient(135deg, #154734 0%, #1E6047 50%, #2A7C5C 100%);
   }
 
   .bg-gold-gradient-hover {
-    background: linear-gradient(135deg, #C9972B 0%, #F0D585 50%, #FFE9A8 100%);
+    background: linear-gradient(135deg, #0F3526 0%, #154734 50%, #1E6047 100%);
   }
 
   .text-gold-gradient {
-    background: linear-gradient(135deg, #C9972B 0%, #F0D585 50%, #FFE9A8 100%);
+    background: linear-gradient(135deg, #154734 0%, #C9972B 50%, #8A6A16 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
   .border-gold-hairline {
-    border-color: rgba(201, 151, 43, 0.25);
+    border-color: rgba(21, 71, 52, 0.15);
   }
 
   .border-gold-glow {
-    border-color: rgba(240, 213, 133, 0.6);
-    box-shadow: 0 0 15px rgba(201, 151, 43, 0.25);
+    border-color: rgba(21, 71, 52, 0.4);
+    box-shadow: 0 0 15px rgba(21, 71, 52, 0.1);
   }
 
   .shadow-emerald-glow {
-    box-shadow: 0 20px 40px -15px rgba(11, 61, 46, 0.5);
+    box-shadow: 0 20px 40px -15px rgba(21, 71, 52, 0.2);
   }
 
   .shadow-gold-soft {
-    box-shadow: 0 10px 30px -5px rgba(201, 151, 43, 0.15);
+    box-shadow: 0 10px 30px -5px rgba(21, 71, 52, 0.08);
   }
 
   .glass-emerald {
-    background: rgba(10, 51, 36, 0.85);
+    background: rgba(240, 245, 242, 0.9);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
   .glass-dark {
-    background: rgba(6, 35, 25, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
 
   .glass-light {
-    background: rgba(250, 248, 243, 0.95);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -79,16 +89,16 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A3324;
+  background: #FAF9F6;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #8A6A16;
+  background: #C2D6CB;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #C9972B;
+  background: #154734;
 }
 
 /* Shine Sweep Animation */
@@ -112,7 +122,7 @@
   background: linear-gradient(
     to right,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0.4) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   transform: rotate(30deg);
@@ -126,7 +136,8 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(90deg, rgba(201, 151, 43, 0.05) 25%, rgba(201, 151, 43, 0.15) 50%, rgba(201, 151, 43, 0.05) 75%);
+  background: linear-gradient(90deg, rgba(21, 71, 52, 0.04) 25%, rgba(21, 71, 52, 0.1) 50%, rgba(21, 71, 52, 0.04) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.8s infinite;
 }
+

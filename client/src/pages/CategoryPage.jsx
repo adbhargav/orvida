@@ -54,225 +54,210 @@ export default function CategoryPage() {
 
   const allTags = ['Low Maintenance', 'Air Purifying', 'Pet Friendly', 'Rare & Exotic', 'Bestseller', 'Handcrafted', 'Luxury Hamper'];
 
+  const categoryColors = ['#3B5998', '#C05656', '#8B5A3C', '#6B7028', '#E6A119', '#6B8E85', '#8E6B89'];
+
   return (
-    <div className="pb-24 space-y-8">
+    <div className="pb-24 space-y-6 sm:space-y-8 bg-[#FAF9F6]">
       
       {quickViewProduct && (
         <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
       )}
 
-      {/* Category Hero Banner */}
-      <div className="relative h-[40vh] min-h-[300px] flex items-center justify-center overflow-hidden bg-[#062319]">
-        <img
-          src={category.banner}
-          alt={category.name}
-          className="absolute inset-0 w-full h-full object-cover filter brightness-75 scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B3D2E] via-[#0A3324]/70 to-black/50" />
-        
-        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center space-y-3">
-          <div className="flex justify-center items-center gap-2 text-xs text-[#F0D585] uppercase font-bold tracking-widest">
-            <Link to="/" className="hover:underline">Home</Link>
-            <ChevronRight className="w-3 h-3 text-[#8A6A16]" />
-            <span>{category.name}</span>
-            {activeSubcategoryObj && (
-              <>
-                <ChevronRight className="w-3 h-3 text-[#8A6A16]" />
-                <span className="text-white">{activeSubcategoryObj.name}</span>
-              </>
-            )}
-          </div>
-
-          <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-white">
-            {activeSubcategoryObj ? activeSubcategoryObj.name : category.name}
-          </h1>
-
-          <p className="text-xs sm:text-sm text-[#F7F5EF]/80 max-w-xl mx-auto font-serif italic">
-            "{category.tagline}"
-          </p>
+      {/* Breadcrumbs & Header Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        <div className="flex items-center gap-2 text-xs text-[#154734] uppercase font-bold tracking-widest mb-2">
+          <Link to="/" className="hover:underline">Home</Link>
+          <ChevronRight className="w-3 h-3 text-slate-400" />
+          <Link to={`/category/${category.slug}`} className="hover:underline">{category.name}</Link>
+          {activeSubcategoryObj && (
+            <>
+              <ChevronRight className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-900 font-bold">{activeSubcategoryObj.name}</span>
+            </>
+          )}
         </div>
+
+        <h1 className="font-display font-extrabold text-3xl sm:text-5xl text-[#154734]">
+          {activeSubcategoryObj ? activeSubcategoryObj.name : category.name}
+        </h1>
       </div>
 
-      {/* Subcategory Chips Bar */}
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+      {/* Kyari-Style Circular Subcategory Selection Bar (Dynamic Product Shift on Click) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-4 sm:gap-6 md:gap-8 overflow-x-auto pb-4 pt-2 scrollbar-none snap-x">
+          
+          {/* 'All Categories' Circle */}
           <button
             onClick={() => setSelectedSubcategory('all')}
-            className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition border ${
-              selectedSubcategory === 'all'
-                ? 'bg-gold-gradient text-[#0A3324] border-transparent shadow-lg'
-                : 'bg-[#0A3324] text-[#F7F5EF] border-[#8A6A16]/40 hover:border-[#F0D585]'
-            }`}
+            className="flex flex-col items-center min-w-[90px] sm:min-w-[120px] group cursor-pointer text-center snap-center"
           >
-            All {category.name} ({PRODUCTS.filter(p => p.categorySlug === category.slug).length})
+            <div
+              className={`w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300 shadow-md ${
+                selectedSubcategory === 'all'
+                  ? 'border-4 border-[#154734] ring-4 ring-[#154734]/20 scale-105 shadow-xl'
+                  : 'border-4 border-white hover:scale-105'
+              }`}
+              style={{ backgroundColor: '#154734' }}
+            >
+              <img
+                src={category.banner}
+                alt={`All ${category.name}`}
+                className="w-full h-full object-cover rounded-full opacity-80 group-hover:scale-110 transition duration-500"
+              />
+              <span className="absolute inset-0 flex items-center justify-center text-white font-bold text-xs uppercase tracking-wider bg-black/30 backdrop-blur-[2px]">
+                All
+              </span>
+            </div>
+            <span className={`font-bold text-xs sm:text-sm mt-3 tracking-wide transition duration-200 ${
+              selectedSubcategory === 'all' ? 'text-[#154734] underline font-extrabold' : 'text-slate-800 group-hover:text-[#154734]'
+            }`}>
+              All {category.name}
+            </span>
           </button>
 
-          {category.subcategories.map(sub => (
-            <button
-              key={sub.id}
-              onClick={() => setSelectedSubcategory(sub.slug)}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition border ${
-                selectedSubcategory === sub.slug
-                  ? 'bg-gold-gradient text-[#0A3324] border-transparent shadow-lg'
-                  : 'bg-[#0A3324] text-[#F7F5EF] border-[#8A6A16]/40 hover:border-[#F0D585]'
-              }`}
-            >
-              {sub.name}
-            </button>
-          ))}
+          {/* Individual Subcategories Circles */}
+          {category.subcategories.map((sub, idx) => {
+            const isSelected = selectedSubcategory === sub.slug;
+            const circleBg = categoryColors[idx % categoryColors.length];
+
+            return (
+              <button
+                key={sub.id}
+                onClick={() => setSelectedSubcategory(sub.slug)}
+                className="flex flex-col items-center min-w-[90px] sm:min-w-[120px] group cursor-pointer text-center snap-center"
+              >
+                <div
+                  className={`w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full flex items-center justify-center relative overflow-hidden transition-all duration-300 shadow-md ${
+                    isSelected
+                      ? 'border-4 border-[#154734] ring-4 ring-[#154734]/30 scale-105 shadow-xl'
+                      : 'border-4 border-white hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: circleBg }}
+                >
+                  <img
+                    src={sub.image}
+                    alt={sub.name}
+                    className="w-full h-full object-cover rounded-full group-hover:scale-110 transition duration-500"
+                  />
+                </div>
+                <span className={`font-bold text-xs sm:text-sm mt-3 tracking-wide transition duration-200 ${
+                  isSelected ? 'text-[#154734] underline font-extrabold' : 'text-slate-800 group-hover:text-[#154734]'
+                }`}>
+                  {sub.name}
+                </span>
+              </button>
+            );
+          })}
+
         </div>
       </div>
 
-      {/* Main Filter + Product Listing Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        {/* Desktop Filter Sidebar */}
-        <div className="hidden lg:block space-y-6 glass-dark p-6 rounded-3xl border border-[#8A6A16]/30 h-fit">
-          <div className="flex justify-between items-center border-b border-[#8A6A16]/30 pb-3">
-            <h3 className="font-display font-bold text-sm uppercase text-[#F0D585] flex items-center gap-2">
-              <SlidersHorizontal className="w-4 h-4" /> Filter Options
-            </h3>
+      {/* Filter Pill Controls & Sorting Bar (Screenshot UI) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 pb-2">
+          
+          {/* Quick Filter Pill Buttons */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <button
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className="px-4 py-2 rounded-full border border-gray-300 bg-white text-slate-700 font-semibold hover:border-[#154734] hover:text-[#154734] transition flex items-center gap-1.5 shadow-sm"
+            >
+              <span>Price</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedTag(selectedTag === 'Air Purifying' ? 'all' : 'Air Purifying')}
+              className={`px-4 py-2 rounded-full border text-xs font-semibold transition flex items-center gap-1.5 shadow-sm ${
+                selectedTag === 'Air Purifying'
+                  ? 'bg-[#154734] text-white border-[#154734]'
+                  : 'bg-white text-slate-700 border-gray-300 hover:border-[#154734]'
+              }`}
+            >
+              <span>Plant Characteristics</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedTag(selectedTag === 'Low Maintenance' ? 'all' : 'Low Maintenance')}
+              className={`px-4 py-2 rounded-full border text-xs font-semibold transition flex items-center gap-1.5 shadow-sm ${
+                selectedTag === 'Low Maintenance'
+                  ? 'bg-[#154734] text-white border-[#154734]'
+                  : 'bg-white text-slate-700 border-gray-300 hover:border-[#154734]'
+              }`}
+            >
+              <span>Sun Light</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedTag(selectedTag === 'Pet Friendly' ? 'all' : 'Pet Friendly')}
+              className={`px-4 py-2 rounded-full border text-xs font-semibold transition flex items-center gap-1.5 shadow-sm ${
+                selectedTag === 'Pet Friendly'
+                  ? 'bg-[#154734] text-white border-[#154734]'
+                  : 'bg-white text-slate-700 border-gray-300 hover:border-[#154734]'
+              }`}
+            >
+              <span>Water Level</span>
+              <span className="text-slate-400">▾</span>
+            </button>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-white text-slate-800 text-xs font-semibold px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:border-[#154734] shadow-sm cursor-pointer"
+            >
+              <option value="featured">Featured ▾</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+          </div>
+
+        </div>
+
+        {/* Showing Count Label */}
+        <div className="text-xs text-slate-600 font-medium pt-1">
+          Showing <strong className="text-[#154734] font-bold">{filteredProducts.length}</strong> products
+        </div>
+      </div>
+
+      {/* Main Product Grid Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-gray-200 p-8 space-y-4 shadow-sm">
+            <Sparkles className="w-12 h-12 text-[#154734] mx-auto opacity-40" />
+            <h3 className="font-display font-bold text-xl text-slate-900">No products found matching filters</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Try selecting another subcategory above or clearing your filters.
+            </p>
             <button
               onClick={() => {
                 setPriceMax(10000);
                 setSelectedTag('all');
                 setSelectedSubcategory('all');
               }}
-              className="text-[10px] text-[#F7F5EF]/60 hover:text-white underline"
+              className="bg-[#154734] text-white px-6 py-2.5 rounded-full font-bold text-xs shadow-md hover:bg-[#0F3526]"
             >
-              Reset Filters
+              Reset All Filters
             </button>
           </div>
-
-          {/* Price Range Slider */}
-          <div className="space-y-3">
-            <div className="flex justify-between text-xs font-semibold">
-              <span className="text-[#F7F5EF]">Max Price:</span>
-              <span className="text-[#F0D585]">₹{priceMax.toLocaleString('en-IN')}</span>
-            </div>
-            <input
-              type="range"
-              min="1000"
-              max="10000"
-              step="500"
-              value={priceMax}
-              onChange={(e) => setPriceMax(Number(e.target.value))}
-              className="w-full accent-[#C9972B] bg-[#0B3D2E]"
-            />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+            {filteredProducts.map(product => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onQuickView={(p) => setQuickViewProduct(p)}
+              />
+            ))}
           </div>
-
-          {/* Botanical Tags Filter */}
-          <div className="space-y-3 pt-4 border-t border-[#8A6A16]/30">
-            <span className="text-xs uppercase font-bold text-[#F0D585]">Botanical Tags</span>
-            <div className="flex flex-wrap gap-1.5">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setSelectedTag(selectedTag === tag ? 'all' : tag)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-medium border transition ${
-                    selectedTag === tag
-                      ? 'bg-[#C9972B] text-black border-white font-bold'
-                      : 'bg-[#0B3D2E] text-[#F7F5EF]/80 border-[#8A6A16]/30 hover:border-[#F0D585]'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Quality Guarantee Box */}
-          <div className="pt-4 border-t border-[#8A6A16]/30 p-4 rounded-2xl bg-[#0B3D2E]/80 text-xs text-[#F7F5EF]/80 space-y-1">
-            <span className="text-[#F0D585] font-bold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> 7-Day Live Guarantee
-            </span>
-            <p className="text-[10px] leading-relaxed">
-              Every botanical item is packed with root hydration gels for safe 5-day transit across India.
-            </p>
-          </div>
-        </div>
-
-        {/* Right Main Grid Area */}
-        <div className="lg:col-span-3 space-y-6">
-          
-          {/* Controls Bar (Mobile Filter Toggle + Sort + Column Views) */}
-          <div className="flex flex-wrap justify-between items-center bg-[#0A3324] p-4 rounded-2xl border border-[#8A6A16]/30 gap-4">
-            
-            <button
-              onClick={() => setIsFilterDrawerOpen(true)}
-              className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B3D2E] border border-[#8A6A16] text-xs text-[#F0D585] font-bold"
-            >
-              <Filter className="w-4 h-4" /> Filters
-            </button>
-
-            <div className="text-xs text-[#F7F5EF]/80 font-medium">
-              Showing <strong className="text-[#F0D585]">{filteredProducts.length}</strong> luxury items
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Sort By Dropdown */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#0B3D2E] text-[#F7F5EF] text-xs font-semibold px-3 py-2 rounded-xl border border-[#8A6A16]/40 focus:outline-none focus:border-[#F0D585]"
-              >
-                <option value="featured">Sort by: Featured</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </select>
-
-              {/* Layout Switcher (Desktop) */}
-              <div className="hidden sm:flex items-center gap-1 bg-[#0B3D2E] p-1 rounded-xl border border-[#8A6A16]/40 text-[#F0D585]">
-                <button
-                  onClick={() => setLayoutColumns(3)}
-                  className={`p-1.5 rounded-lg transition ${layoutColumns === 3 ? 'bg-[#8A6A16] text-white' : 'hover:bg-white/10'}`}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setLayoutColumns(4)}
-                  className={`p-1.5 rounded-lg transition ${layoutColumns === 4 ? 'bg-[#8A6A16] text-white' : 'hover:bg-white/10'}`}
-                >
-                  <LayoutGrid className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Product Grid */}
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-20 bg-[#0A3324] rounded-3xl border border-[#8A6A16]/30 p-8 space-y-4">
-              <Sparkles className="w-12 h-12 text-[#F0D585] mx-auto opacity-40" />
-              <h3 className="font-display font-bold text-xl text-white">No products found matching filters</h3>
-              <p className="text-xs text-[#F7F5EF]/70 max-w-sm mx-auto">
-                Try expanding your price range slider or clearing botanical tags.
-              </p>
-              <button
-                onClick={() => {
-                  setPriceMax(10000);
-                  setSelectedTag('all');
-                  setSelectedSubcategory('all');
-                }}
-                className="bg-gold-gradient text-[#0A3324] px-6 py-2.5 rounded-full font-bold text-xs shadow-md"
-              >
-                Reset All Filters
-              </button>
-            </div>
-          ) : (
-            <div className={`grid grid-cols-2 ${layoutColumns === 4 ? 'lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-3'} gap-3 sm:gap-6`}>
-              {filteredProducts.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onQuickView={(p) => setQuickViewProduct(p)}
-                />
-              ))}
-            </div>
-          )}
-
-        </div>
+        )}
       </div>
+
     </div>
   );
 }

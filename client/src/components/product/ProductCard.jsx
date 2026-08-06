@@ -39,12 +39,12 @@ export default function ProductCard({ product, onQuickView }) {
 
   return (
     <div
-      className="group relative bg-[#FAF8F3] text-[#1B1B1B] rounded-2xl overflow-hidden border border-[#C9972B]/30 hover:border-[#F0D585] shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_20px_40px_rgba(201,151,43,0.2)] transition-all duration-500 flex flex-col h-full transform hover:-translate-y-1"
+      className="group relative bg-white text-slate-900 rounded-2xl overflow-hidden border border-gray-200 hover:border-[#154734]/40 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full transform hover:-translate-y-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Top Image Container */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-[#F2EFE6]">
+      <div className="relative aspect-[4/5] overflow-hidden bg-gray-50">
         
         {/* Main & Secondary Image with Crossfade & Scale */}
         <Link to={`/product/${product.slug}`} className="block w-full h-full">
@@ -69,12 +69,12 @@ export default function ProductCard({ product, onQuickView }) {
         {/* Botanical Badges Pill (Top Left) */}
         <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex flex-col gap-1 z-10 pointer-events-none">
           {product.isNew && (
-            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-[#0A3324]/90 text-[#F0D585] text-[8px] sm:text-[10px] font-bold uppercase tracking-wider border border-[#C9972B]/40 shadow-sm flex items-center gap-1">
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-[#154734] text-white text-[8px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
               <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#F0D585]" /> NEW
             </span>
           )}
           {product.isBestseller && !product.isNew && (
-            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-[#8A6A16]/90 text-white text-[8px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm">
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-[#C9972B] text-white text-[8px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm">
               ★ BESTSELLER
             </span>
           )}
@@ -85,12 +85,12 @@ export default function ProductCard({ product, onQuickView }) {
           onClick={handleWishlistClick}
           className={`absolute top-2 right-2 sm:top-3 sm:right-3 p-2 sm:p-2.5 rounded-full z-10 transition-all duration-300 shadow-md ${
             isLiked
-              ? 'bg-[#0B3D2E] text-[#F0D585] border border-[#F0D585] scale-110'
-              : 'bg-white/80 backdrop-blur-md text-[#8A6A16] hover:bg-white hover:text-[#C9972B] hover:scale-110'
+              ? 'bg-[#154734] text-white scale-110'
+              : 'bg-white/90 backdrop-blur-md text-slate-600 hover:bg-white hover:text-[#154734] hover:scale-110'
           }`}
           aria-label="Add to Wishlist"
         >
-          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLiked ? 'fill-[#F0D585] text-[#F0D585] animate-pulse' : ''}`} />
+          <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isLiked ? 'fill-white text-white animate-pulse' : ''}`} />
         </button>
 
         {/* Quick View Button Overlay (Desktop) */}
@@ -100,7 +100,7 @@ export default function ProductCard({ product, onQuickView }) {
               e.preventDefault();
               onQuickView?.(product);
             }}
-            className="w-full bg-[#0A3324]/90 backdrop-blur-md hover:bg-[#0A3324] text-[#F0D585] border border-[#C9972B] px-3 py-2 rounded-full text-[11px] font-bold tracking-wider flex items-center justify-center gap-1.5 shadow-lg transition duration-200"
+            className="w-full bg-white/95 backdrop-blur-md hover:bg-[#154734] text-slate-800 hover:text-white border border-gray-200 px-3 py-2 rounded-full text-[11px] font-bold tracking-wider flex items-center justify-center gap-1.5 shadow-md transition duration-200"
           >
             <Eye className="w-3.5 h-3.5" /> QUICK VIEW
           </button>
@@ -108,16 +108,16 @@ export default function ProductCard({ product, onQuickView }) {
       </div>
 
       {/* Product Information Body */}
-      <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between bg-[#FAF8F3]">
+      <div className="p-3 sm:p-5 flex flex-col flex-1 justify-between bg-white">
         <div>
           {/* Micro-label Subcategory/Tag line */}
-          <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-[#8A6A16] mb-1 truncate">
+          <div className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-[#154734] mb-1 truncate">
             {product.subcategoryName}
           </div>
 
           {/* Product Title */}
           <Link to={`/product/${product.slug}`} className="block mb-1.5">
-            <h3 className="font-display font-semibold text-xs sm:text-sm text-[#1B1B1B] group-hover:text-[#8A6A16] transition line-clamp-2 leading-snug">
+            <h3 className="font-display font-semibold text-xs sm:text-sm text-slate-900 group-hover:text-[#154734] transition line-clamp-2 leading-snug">
               {product.name}
             </h3>
           </Link>
@@ -133,10 +133,10 @@ export default function ProductCard({ product, onQuickView }) {
                   onClick={() => setSelectedVariant(v)}
                   className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border transition-all ${
                     selectedVariant?.id === v.id
-                      ? 'ring-2 ring-[#C9972B] scale-125 border-white'
+                      ? 'ring-2 ring-[#154734] scale-125 border-white'
                       : 'border-gray-300 opacity-80'
                   }`}
-                  style={{ backgroundColor: v.swatch || '#C9972B' }}
+                  style={{ backgroundColor: v.swatch || '#154734' }}
                   title={v.value}
                 />
               ))}
@@ -145,7 +145,7 @@ export default function ProductCard({ product, onQuickView }) {
 
           {/* Pricing Row */}
           <div className="flex items-baseline gap-1.5 my-2">
-            <span className="font-serif font-bold text-sm sm:text-lg text-[#0B3D2E]">
+            <span className="font-serif font-bold text-sm sm:text-lg text-[#154734]">
               ₹{currentPrice.toLocaleString('en-IN')}
             </span>
             {hasDiscount && (
@@ -158,15 +158,15 @@ export default function ProductCard({ product, onQuickView }) {
           {/* Pill-Shaped Animated Add-to-Cart Button */}
           <button
             onClick={handleAddToCart}
-            className={`w-full py-2 sm:py-2.5 px-2 sm:px-4 rounded-full border border-[#C9972B] font-bold text-[10px] sm:text-xs tracking-wider flex items-center justify-center gap-1 sm:gap-2 transition-all duration-300 ${
+            className={`w-full py-2 sm:py-2.5 px-2 sm:px-4 rounded-full border border-[#154734] font-bold text-[10px] sm:text-xs tracking-wider flex items-center justify-center gap-1 sm:gap-2 transition-all duration-300 ${
               addedAnimation
-                ? 'bg-[#0B3D2E] text-[#F0D585] border-[#F0D585]'
-                : 'bg-transparent text-[#0B3D2E] hover:bg-gold-gradient hover:text-[#0A3324] hover:border-transparent shadow-sm'
+                ? 'bg-[#154734] text-white border-[#154734]'
+                : 'bg-transparent text-[#154734] hover:bg-[#154734] hover:text-white shadow-sm'
             }`}
           >
             {addedAnimation ? (
               <>
-                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-[#F0D585]" />
+                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 <span>ADDED</span>
               </>
             ) : (

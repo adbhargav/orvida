@@ -19,6 +19,7 @@ import Wishlist from './pages/Wishlist';
 import Account from './pages/Account';
 import GiftingConcierge from './pages/GiftingConcierge';
 import About from './pages/About';
+import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 
 // Scroll to Top on route change
@@ -30,6 +31,39 @@ function ScrollToTop() {
   return null;
 }
 
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="flex flex-col min-h-screen bg-[#FAF9F6] text-slate-900 antialiased">
+      {!isAdminRoute && <Navbar />}
+      {!isAdminRoute && <CartDrawer />}
+      
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/category/:slug" element={<CategoryPage />} />
+          <Route path="/category/:slug/:subSlug" element={<CategoryPage />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/orders/:id" element={<OrderConfirmation />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Login />} />
+          <Route path="/gifting-concierge" element={<GiftingConcierge />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+      </main>
+
+      {!isAdminRoute && <Footer />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -37,30 +71,7 @@ export default function App() {
         <WishlistProvider>
           <BrowserRouter>
             <ScrollToTop />
-            <div className="flex flex-col min-h-screen bg-[#0B3D2E] text-[#F7F5EF] antialiased">
-              <Navbar />
-              <AuthModal />
-              <CartDrawer />
-              
-              <main className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/category/:slug" element={<CategoryPage />} />
-                  <Route path="/category/:slug/:subSlug" element={<CategoryPage />} />
-                  <Route path="/product/:slug" element={<ProductDetail />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/orders/:id" element={<OrderConfirmation />} />
-                  <Route path="/wishlist" element={<Wishlist />} />
-                  <Route path="/account" element={<Account />} />
-                  <Route path="/gifting-concierge" element={<GiftingConcierge />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/admin" element={<AdminDashboard />} />
-                </Routes>
-              </main>
-
-              <Footer />
-            </div>
+            <AppContent />
           </BrowserRouter>
         </WishlistProvider>
       </CartProvider>

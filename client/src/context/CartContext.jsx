@@ -90,9 +90,31 @@ export const CartProvider = ({ children }) => {
     setPromoError('');
     if (!code) return;
     const cleanCode = code.trim().toUpperCase();
-    if (cleanCode === 'ORIVIDA10') {
-      setAppliedPromo('ORIVIDA10');
+    
+    if (cleanCode === 'WELCOME10' || cleanCode === 'ORIVIDA10') {
+      setAppliedPromo(cleanCode);
       setDiscountAmount(subtotal * 0.10);
+    } else if (cleanCode === 'ORIVIDA15') {
+      if (subtotal >= 2999) {
+        setAppliedPromo('ORIVIDA15');
+        setDiscountAmount(subtotal * 0.15);
+      } else {
+        setPromoError('Minimum order value of ₹2,999 required for ORIVIDA15');
+      }
+    } else if (cleanCode === 'LUXURY20') {
+      if (subtotal >= 4999) {
+        setAppliedPromo('LUXURY20');
+        setDiscountAmount(subtotal * 0.20);
+      } else {
+        setPromoError('Minimum order value of ₹4,999 required for LUXURY20');
+      }
+    } else if (cleanCode === 'MONSOON50') {
+      if (subtotal >= 9999) {
+        setAppliedPromo('MONSOON50');
+        setDiscountAmount(subtotal * 0.50);
+      } else {
+        setPromoError('Minimum order value of ₹9,999 required for MONSOON50');
+      }
     } else if (cleanCode === 'LUXURY2000') {
       if (subtotal >= 5000) {
         setAppliedPromo('LUXURY2000');
@@ -101,7 +123,7 @@ export const CartProvider = ({ children }) => {
         setPromoError('Minimum order value of ₹5,000 required for LUXURY2000');
       }
     } else {
-      setPromoError('Invalid coupon code. Try ORIVIDA10 or LUXURY2000');
+      setPromoError('Invalid coupon code. Try WELCOME10, ORIVIDA15, or LUXURY20');
     }
   };
 
