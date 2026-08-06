@@ -154,7 +154,32 @@ export default function Home() {
               />
             ))}
           </div>
+        </div>
+      </section>
 
+      {/* Full-Width Luxury Botanical Marquee Ticker */}
+      <section className="bg-[#154734] py-3.5 border-y border-[#0F3526] text-white overflow-hidden whitespace-nowrap shadow-md">
+        <div className="animate-marquee flex items-center gap-12 font-display text-xs sm:text-sm font-bold uppercase tracking-widest">
+          {[...Array(4)].map((_, i) => (
+            <React.Fragment key={i}>
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#F0D585]" /> ANY 4 PLANTS AT ₹999/-
+              </span>
+              <span className="text-[#F0D585]">✦</span>
+              <span className="flex items-center gap-2">
+                <Leaf className="w-4 h-4 text-emerald-300" /> FREE EXPRESS NURSERY SHIPPING &gt; ₹1,999/-
+              </span>
+              <span className="text-[#F0D585]">✦</span>
+              <span className="flex items-center gap-2">
+                <Gift className="w-4 h-4 text-[#F0D585]" /> UP TO 50% OFF + EXTRA 10% OFF ABOVE ₹1,999/-
+              </span>
+              <span className="text-[#F0D585]">✦</span>
+              <span className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-[#F0D585]" /> 100% REPLACEMENT HEALTH GUARANTEE
+              </span>
+              <span className="text-[#F0D585]">✦</span>
+            </React.Fragment>
+          ))}
         </div>
       </section>
 

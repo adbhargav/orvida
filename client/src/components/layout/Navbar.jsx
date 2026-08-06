@@ -57,25 +57,33 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Luxury Announcement Strip */}
-      <div className="bg-[#154734] border-b border-[#103A2B] text-xs py-1.5 sm:py-2.5 px-3 sm:px-4 text-white font-medium tracking-wide shadow-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#F0D585] animate-pulse" />
-            <span className="text-[10px] sm:text-xs">
-              <span className="sm:hidden">Complimentary Express Shipping &gt; ₹1,999</span>
-              <span className="hidden sm:inline">Complimentary Express Shipping on Luxury Hampers & Botanicals above ₹1,999</span>
-            </span>
-          </div>
-          <div className="hidden md:flex items-center gap-6 text-[#E8F2EC] text-xs">
-            <Link to="/gifting-concierge" className="hover:text-white transition flex items-center gap-1.5 font-semibold">
-              <Sparkles className="w-3.5 h-3.5 text-[#F0D585]" /> Gifting Concierge
-            </Link>
-            <span className="text-[#2A6A52]">|</span>
-            <span className="flex items-center gap-1 font-medium">
-              <PhoneCall className="w-3 h-3 text-[#F0D585]" /> VIP Support: +91 800-ORIVIDA
-            </span>
-          </div>
+      {/* Top Luxury Marquee Announcement Strip */}
+      <div className="bg-[#154734] border-b border-[#103A2B] text-xs py-1.5 sm:py-2 text-white font-medium tracking-wide shadow-sm overflow-hidden whitespace-nowrap">
+        <div className="animate-marquee flex items-center gap-8 text-[11px] sm:text-xs">
+          {[...Array(4)].map((_, i) => (
+            <React.Fragment key={i}>
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#F0D585]" />
+                <strong className="text-[#F0D585]">COMPLIMENTARY SHIPPING</strong> on orders above ₹1,999/-
+              </span>
+              <span className="text-[#F0D585]/40">•</span>
+              <span className="flex items-center gap-2">
+                <Leaf className="w-3.5 h-3.5 text-emerald-300" />
+                <strong className="text-white">ANY 4 PLANTS AT ₹999/-</strong> (Limited Time Botanical Offer)
+              </span>
+              <span className="text-[#F0D585]/40">•</span>
+              <span className="flex items-center gap-2">
+                <Gift className="w-3.5 h-3.5 text-[#F0D585]" />
+                <strong className="text-emerald-200">USE CODE WELCOME10</strong> for 10% OFF your first purchase
+              </span>
+              <span className="text-[#F0D585]/40">•</span>
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#F0D585]" />
+                <strong className="text-white">UP TO 50% OFF</strong> + Extra 10% OFF above ₹1,999/-
+              </span>
+              <span className="text-[#F0D585]/40">•</span>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
