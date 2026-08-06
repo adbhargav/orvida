@@ -101,9 +101,9 @@ export default function Home() {
         <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
       )}
 
-      {/* Hero Banner Carousel (Fitted to Exact Image Size & Aspect Ratio: 1024 x 323 -> 3.17:1 Ratio) */}
-      <section className="relative w-full max-w-[1440px] mx-auto px-2 sm:px-4 lg:px-6 pt-2 sm:pt-4 group">
-        <div className="relative w-full aspect-[1024/323] overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 bg-[#F5F2EB]">
+      {/* Full Screen Edge-to-Edge Hero Banner Carousel */}
+      <section className="relative w-full overflow-hidden group">
+        <div className="relative w-full aspect-[1024/323] overflow-hidden bg-[#F5F2EB]">
           
           {/* Banner Slides */}
           {heroSlides.map((slide, idx) => (
@@ -117,7 +117,7 @@ export default function Home() {
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="w-full h-full object-fill sm:object-cover transition-transform duration-700 hover:scale-[1.01]"
+                className="w-full h-full object-cover transition-transform duration-700 hover:scale-[1.01]"
               />
             </Link>
           ))}
