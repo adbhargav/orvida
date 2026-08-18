@@ -1,10 +1,39 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Star, Heart, Share2, Check, ShoppingBag, ShieldCheck, Truck, RotateCcw, ChevronRight, ChevronDown, ChevronUp, Sparkles, MapPin, Award, ThumbsUp, Play } from 'lucide-react';
-import { PRODUCTS, REVIEWS } from '../data/mockData';
+import {
+  Heart, Check, ShieldCheck, Truck, ChevronRight, ChevronDown, Minus, Plus,
+  Loader2, MapPin, Star,
+} from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import ProductCard from '../components/product/ProductCard';
+import { api } from '../services/api';
+
+const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
+
+// Metro pincodes served by the express nursery network.
+const SERVICED_PREFIXES = ['11', '12', '20', '38', '40', '41', '50', '56', '60', '70', '80'];
+
+function Accordion({ id, title, children, openId, setOpenId }) {
+  const isOpen = openId === id;
+  return (
+    <div className="border-b border-line">
+      <button
+        onClick={() => setOpenId(isOpen ? null : id)}
+        aria-expanded={isOpen}
+        className="w-full py-4 flex justify-between items-center text-left text-sm text-ink hover:text-emerald-default transition-colors"
+      >
+        <span className="type-eyebrow">{title}</span>
+        <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <div className="pb-5 text-sm text-ink-soft leading-relaxed whitespace-pre-line animate-fadeIn">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -12,48 +41,60 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
 
-  const product = PRODUCTS.find(p => p.slug === slug) || PRODUCTS[0];
-  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null);
+  const [product, setProduct] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const [activeImage, setActiveImage] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  
-  // Pincode Checker state
+  const [openAccordion, setOpenAccordion] = useState('description');
+  const [addedSuccess, setAddedSuccess] = useState(false);
+
   const [pincode, setPincode] = useState('');
   const [pincodeStatus, setPincodeStatus] = useState(null);
 
-  // Accordions state
-  const [openAccordion, setOpenAccordion] = useState('description');
+  const loadProduct = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.products.getBySlug(slug);
+      const found = res.product;
+      setProduct(found);
+      setSelectedVariant(found.variants?.[0] || null);
+      setActiveImage(0);
+      setQuantity(1);
 
-  // Magnifier state
-  const [zoomPos, setZoomPos] = useState({ x: 0, y: 0, show: false });
-  const [addedSuccess, setAddedSuccess] = useState(false);
+      if (found.categorySlug) {
+        const rel = await api.products.getAll({ category: found.categorySlug, limit: 5 });
+        setRelated((rel.products || []).filter((p) => p.id !== found.id).slice(0, 4));
+      }
+    } catch (err) {
+      setError(err.status === 404 ? 'notfound' : err.message || 'Could not load this product.');
+    } finally {
+      setLoading(false);
+    }
+  }, [slug]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    setActiveMediaIndex(0);
-    setSelectedVariant(product.variants?.[0] || null);
-  }, [slug, product]);
+    loadProduct();
+  }, [loadProduct]);
 
-  const isLiked = isInWishlist(product.id);
-  const currentPrice = (product.discountPrice || product.price) + (selectedVariant?.priceDelta || 0);
-  const originalPrice = product.price + (selectedVariant?.priceDelta || 0);
-  const hasDiscount = product.discountPrice && product.discountPrice < product.price;
-
-  const handleMouseMove = (e) => {
-    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    setZoomPos({ x, y, show: true });
-  };
-
-  const handlePincodeCheck = (e) => {
-    e.preventDefault();
-    if (!pincode || pincode.length < 6) return;
-    if (product.pincodes.includes(pincode.trim())) {
-      setPincodeStatus({ success: true, message: 'Delivering in 2-3 business days with White-Glove Nursery Express.' });
-    } else {
-      setPincodeStatus({ success: false, message: 'Currently unavailable for standard delivery to this pincode. Try a metro pincode (e.g. 560001).' });
+  const handlePincodeCheck = (event) => {
+    event.preventDefault();
+    const clean = pincode.replace(/\D/g, '');
+    if (clean.length !== 6) {
+      setPincodeStatus({ ok: false, message: 'Please enter a valid 6-digit pincode.' });
+      return;
     }
+    const serviced = SERVICED_PREFIXES.some((p) => clean.startsWith(p));
+    setPincodeStatus(
+      serviced
+        ? { ok: true, message: 'Delivers in 2–3 business days with white-glove nursery express.' }
+        : { ok: false, message: 'Not yet on the express network. Standard dispatch takes 5–7 days.' }
+    );
   };
 
   const handleAddToCart = () => {
@@ -67,310 +108,315 @@ export default function ProductDetail() {
     navigate('/checkout');
   };
 
-  const relatedProducts = PRODUCTS.filter(p => p.id !== product.id && p.categoryId === product.categoryId).slice(0, 4);
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-ink-soft">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <p className="text-sm">Loading…</p>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-6">
+        <p className="type-heading text-2xl text-ink">
+          {error === 'notfound' ? 'This piece is no longer available' : 'Something went wrong'}
+        </p>
+        <p className="text-sm text-ink-soft max-w-md">
+          {error === 'notfound'
+            ? 'It may have sold out or been retired from the collection.'
+            : error}
+        </p>
+        <Link
+          to="/category/plants"
+          className="px-7 py-3 border border-ink text-ink hover:bg-ink hover:text-white text-[11px] uppercase tracking-[0.16em] transition-colors"
+        >
+          Browse the collection
+        </Link>
+      </div>
+    );
+  }
+
+  const isLiked = isInWishlist(product.id);
+  const variantDelta = selectedVariant?.priceDelta || 0;
+  const currentPrice = (product.effectivePrice ?? product.price) + variantDelta;
+  const originalPrice = product.price + variantDelta;
+  const hasDiscount = Boolean(product.discountPrice);
+  const isOutOfStock = product.stock === 0;
+  const isLowStock = product.stock > 0 && product.stock <= 5;
 
   return (
-    <div className="pb-24 space-y-16 bg-[#FAF9F6]">
-      
-      {/* Main Top Section: Sticky 60% Left / 40% Right */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-[#154734] mb-6 uppercase font-bold tracking-widest">
-          <Link to="/" className="hover:underline">Home</Link>
-          <ChevronRight className="w-3 h-3 text-slate-400" />
-          <Link to={`/category/${product.categorySlug}`} className="hover:underline">{product.categoryName}</Link>
-          <ChevronRight className="w-3 h-3 text-slate-400" />
-          <span className="text-slate-900 font-bold truncate max-w-xs">{product.name}</span>
+    <div className="bg-canvas pb-28 lg:pb-20">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pt-6 sm:pt-10">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-ink-soft mb-8 overflow-hidden">
+          <Link to="/" className="hover:text-emerald-default transition-colors shrink-0">Home</Link>
+          <ChevronRight className="w-3 h-3 text-ink-faint shrink-0" />
+          <Link to={`/category/${product.categorySlug}`} className="hover:text-emerald-default transition-colors shrink-0">
+            {product.categoryName}
+          </Link>
+          <ChevronRight className="w-3 h-3 text-ink-faint shrink-0" />
+          <span className="text-ink truncate">{product.name}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          
-          {/* LEFT 60% COLUMN: Sticky Gallery */}
-          <div className="lg:col-span-7 space-y-4 lg:sticky lg:top-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start">
+          {/* Gallery */}
+          <div className="lg:col-span-7 lg:sticky lg:top-28">
             <div className="flex flex-col-reverse md:flex-row gap-4">
-              
-              {/* Thumbnail Rail */}
-              <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto max-h-[520px] pb-2 md:pb-0 scrollbar-none">
-                {product.images?.map((img, idx) => (
-                  <button
-                    key={img.id || idx}
-                    onClick={() => setActiveMediaIndex(idx)}
-                    className={`relative w-16 h-16 md:w-20 md:h-20 rounded-2xl overflow-hidden border-2 transition-all flex-shrink-0 ${
-                      activeMediaIndex === idx
-                        ? 'border-[#154734] scale-105 shadow-md ring-2 ring-[#154734]/30'
-                        : 'border-transparent opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    <img src={img.url} alt="Gallery thumbnail" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+              {product.images.length > 1 && (
+                <div className="flex md:flex-col gap-3 overflow-x-auto scrollbar-none shrink-0">
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={img.id || idx}
+                      onClick={() => setActiveImage(idx)}
+                      aria-label={`View image ${idx + 1}`}
+                      aria-current={activeImage === idx}
+                      className={`w-16 h-20 md:w-20 md:h-24 overflow-hidden border transition-colors shrink-0 ${
+                        activeImage === idx ? 'border-ink' : 'border-line hover:border-line-strong'
+                      }`}
+                    >
+                      <img src={img.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              {/* Primary Image with Magnifier Zoom Lens */}
-              <div
-                className="relative flex-1 aspect-[4/5] rounded-3xl overflow-hidden bg-white border border-gray-200 shadow-md cursor-crosshair group"
-                onMouseMove={handleMouseMove}
-                onMouseLeave={() => setZoomPos(prev => ({ ...prev, show: false }))}
-              >
+              <div className="relative flex-1 aspect-[4/5] overflow-hidden bg-emerald-subtle border border-line">
                 <img
-                  src={product.images[activeMediaIndex]?.url}
+                  src={product.images[activeImage]?.url}
                   alt={product.name}
-                  className="w-full h-full object-cover transition duration-300"
+                  className="w-full h-full object-cover"
                 />
-
-                {/* Magnifier Lens Window */}
-                {zoomPos.show && (
-                  <div
-                    className="absolute inset-0 z-20 pointer-events-none rounded-3xl overflow-hidden shadow-2xl border-2 border-[#154734]"
-                    style={{
-                      backgroundImage: `url(${product.images[activeMediaIndex]?.url})`,
-                      backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
-                      backgroundSize: '220%'
-                    }}
-                  />
-                )}
-
-                {/* Wishlist Button */}
                 <button
                   onClick={() => toggleWishlist(product.id)}
-                  className={`absolute top-4 right-4 z-30 p-3 rounded-full shadow-md transition-all ${
-                    isLiked ? 'bg-[#154734] text-white scale-110' : 'bg-white/90 text-slate-700 hover:text-[#154734] hover:scale-110'
+                  aria-pressed={isLiked}
+                  aria-label={isLiked ? 'Remove from wishlist' : 'Save to wishlist'}
+                  className={`absolute top-4 right-4 p-2.5 rounded-full transition-colors ${
+                    isLiked ? 'bg-emerald-default text-white' : 'bg-white/90 text-ink-soft hover:text-emerald-default'
                   }`}
                 >
-                  <Heart className={`w-5 h-5 ${isLiked ? 'fill-white text-white' : ''}`} />
+                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>
           </div>
 
-          {/* RIGHT 40% COLUMN: Scrollable Product Details */}
-          <div className="lg:col-span-5 space-y-6 text-slate-900">
-            
-            <div>
-              <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">
-                {product.categoryName} · {product.subcategoryName}
+          {/* Details */}
+          <div className="lg:col-span-5 space-y-8">
+            <div className="space-y-3">
+              <span className="type-eyebrow text-ink-faint block">
+                {[product.categoryName, product.subcategoryName].filter(Boolean).join(' · ')}
               </span>
 
-              <h1 className="font-serif text-3xl sm:text-4xl text-slate-900 font-bold mt-1 mb-3 leading-snug">
-                {product.name}
-              </h1>
+              <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">{product.name}</h1>
 
-
-
-              {/* Price Block */}
-              <div className="p-4 rounded-2xl bg-[#F0F5F2] border border-gray-200 flex items-baseline gap-3 mb-4">
-                <span className="font-serif font-bold text-3xl text-[#154734]">
-                  ₹{currentPrice.toLocaleString('en-IN')}
-                </span>
-                {hasDiscount && (
-                  <span className="text-sm text-gray-400 line-through font-medium">
-                    ₹{originalPrice.toLocaleString('en-IN')}
+              {product.reviewCount > 0 && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="flex gap-0.5 text-gold-default" aria-hidden="true">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-3.5 h-3.5 ${i < Math.round(product.avgRating) ? 'fill-current' : ''}`} />
+                    ))}
                   </span>
-                )}
-                <span className="text-[10px] text-slate-500 ml-auto">Inclusive of all luxury taxes & packaging</span>
-              </div>
+                  <span className="text-ink-soft tabular">
+                    {product.avgRating.toFixed(1)} · {product.reviewCount} reviews
+                  </span>
+                </div>
+              )}
+
+              {product.shortDescription && (
+                <p className="text-ink-soft leading-relaxed pt-1">{product.shortDescription}</p>
+              )}
             </div>
 
-            {/* Variant Selector Swatches */}
-            {product.variants?.length > 0 && (
-              <div className="space-y-3 p-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#154734] block">
-                  Select Size / Planter Finish:
-                </label>
-                <div className="flex flex-wrap gap-2.5">
+            <div className="flex items-baseline gap-3 pb-6 border-b border-line">
+              <span className="type-price text-3xl text-ink">{formatPrice(currentPrice)}</span>
+              {hasDiscount && (
+                <>
+                  <span className="text-base text-ink-faint line-through tabular">{formatPrice(originalPrice)}</span>
+                  <span className="text-sm text-emerald-default">
+                    Save {formatPrice(originalPrice - currentPrice)}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Variants */}
+            {product.variants.length > 0 && (
+              <div className="space-y-3">
+                <span className="type-eyebrow text-ink-soft block">Size &amp; planter finish</span>
+                <div className="flex flex-wrap gap-2">
                   {product.variants.map((v) => (
                     <button
                       key={v.id}
                       onClick={() => setSelectedVariant(v)}
-                      className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${
+                      className={`px-4 py-2.5 border text-sm transition-colors ${
                         selectedVariant?.id === v.id
-                          ? 'bg-[#154734] text-white border-[#154734] shadow-sm scale-105'
-                          : 'bg-gray-50 text-slate-700 border-gray-200 hover:border-[#154734]'
+                          ? 'border-ink bg-ink text-white'
+                          : 'border-line text-ink-soft hover:border-ink hover:text-ink'
                       }`}
                     >
-                      {v.value} {v.priceDelta > 0 ? `(+₹${v.priceDelta})` : ''}
+                      {v.value}
+                      {v.priceDelta > 0 && <span className="ml-1.5 tabular opacity-70">+{formatPrice(v.priceDelta)}</span>}
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Quantity Stepper & Add to Cart CTAs */}
-            <div className="space-y-3 pt-2">
-              <div className="flex gap-4">
-                {/* Stepper */}
-                <div className="flex items-center border border-gray-300 rounded-full bg-gray-50 px-3">
+            {/* Stock */}
+            {isOutOfStock ? (
+              <p className="text-sm text-rose-600">Currently sold out — check back soon.</p>
+            ) : isLowStock ? (
+              <p className="text-sm text-amber-700">Only {product.stock} left in the nursery.</p>
+            ) : null}
+
+            {/* Actions */}
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex items-center border border-line shrink-0">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-2 py-1 text-base font-bold text-slate-700 hover:text-[#154734]"
+                    className="px-3.5 py-3.5 text-ink-soft hover:text-emerald-default transition-colors"
+                    aria-label="Decrease quantity"
                   >
-                    -
+                    <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="px-3 text-sm font-bold text-slate-900">{quantity}</span>
+                  <span className="px-2 text-sm text-ink tabular min-w-[2rem] text-center">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-2 py-1 text-base font-bold text-slate-700 hover:text-[#154734]"
+                    onClick={() => setQuantity(Math.min(product.stock || 99, quantity + 1))}
+                    className="px-3.5 py-3.5 text-ink-soft hover:text-emerald-default transition-colors"
+                    aria-label="Increase quantity"
                   >
-                    +
+                    <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                {/* Primary Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  className={`flex-1 py-4 px-6 rounded-full font-extrabold text-xs tracking-widest flex items-center justify-center gap-2 transition duration-300 ${
-                    addedSuccess
-                      ? 'bg-[#154734] text-white'
-                      : 'bg-[#154734] hover:bg-[#0F3526] text-white shadow-lg hover:scale-[1.02]'
+                  disabled={isOutOfStock}
+                  className={`flex-1 py-3.5 px-6 text-[11px] uppercase tracking-[0.16em] flex items-center justify-center gap-2 transition-colors ${
+                    isOutOfStock
+                      ? 'bg-line text-ink-faint cursor-not-allowed'
+                      : addedSuccess
+                      ? 'bg-emerald-deep text-white'
+                      : 'bg-emerald-default hover:bg-emerald-deep text-white'
                   }`}
                 >
-                  {addedSuccess ? (
-                    <>
-                      <Check className="w-4 h-4 text-white" />
-                      <span>ADDED TO BASKET!</span>
-                    </>
+                  {isOutOfStock ? 'Sold out' : addedSuccess ? (
+                    <><Check className="w-3.5 h-3.5" /> Added to cart</>
                   ) : (
-                    <>
-                      <ShoppingBag className="w-4 h-4" />
-                      <span>ADD TO CART · ₹{(currentPrice * quantity).toLocaleString('en-IN')}</span>
-                    </>
+                    <>Add to cart — {formatPrice(currentPrice * quantity)}</>
                   )}
                 </button>
               </div>
 
-              {/* Buy Now Button */}
               <button
                 onClick={handleBuyNow}
-                className="w-full bg-white hover:bg-gray-50 text-[#154734] border-2 border-[#154734] py-3.5 rounded-full font-bold text-xs tracking-widest transition shadow-sm"
+                disabled={isOutOfStock}
+                className="w-full py-3.5 border border-ink text-ink hover:bg-ink hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-ink text-[11px] uppercase tracking-[0.16em] transition-colors"
               >
-                BUY NOW WITH EXPRESS CHECKOUT
+                Buy it now
               </button>
             </div>
 
-            {/* Pincode Availability Checker */}
-            <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-2">
-              <label className="text-xs font-bold text-[#154734] flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" /> Check Pincode Delivery Availability
+            {/* Pincode */}
+            <div className="space-y-2.5 py-6 border-y border-line">
+              <label htmlFor="pincode" className="type-eyebrow text-ink-soft flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" /> Check delivery
               </label>
               <form onSubmit={handlePincodeCheck} className="flex gap-2">
                 <input
+                  id="pincode"
                   type="text"
+                  inputMode="numeric"
                   maxLength={6}
                   value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  placeholder="Enter 6-digit Pincode (e.g. 560001)"
-                  className="bg-gray-50 border border-gray-300 rounded-full px-4 py-2 text-xs text-slate-900 placeholder-gray-400 focus:outline-none focus:border-[#154734] flex-1"
+                  onChange={(e) => { setPincode(e.target.value); setPincodeStatus(null); }}
+                  placeholder="6-digit pincode"
+                  className="flex-1 px-3.5 py-2.5 border border-line bg-white text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-emerald-default transition-colors tabular"
                 />
                 <button
                   type="submit"
-                  className="bg-[#154734] hover:bg-[#0F3526] text-white px-4 py-2 rounded-full text-xs font-bold transition"
+                  className="px-5 py-2.5 border border-ink text-ink hover:bg-ink hover:text-white text-[11px] uppercase tracking-[0.14em] transition-colors"
                 >
-                  CHECK
+                  Check
                 </button>
               </form>
               {pincodeStatus && (
-                <p className={`text-xs mt-1 font-semibold ${pincodeStatus.success ? 'text-[#154734]' : 'text-red-600'}`}>
+                <p className={`text-sm ${pincodeStatus.ok ? 'text-emerald-default' : 'text-ink-soft'}`}>
                   {pincodeStatus.message}
                 </p>
               )}
             </div>
 
-            {/* Trust Row */}
-            <div className="grid grid-cols-2 gap-3 pt-2 text-xs text-slate-600">
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-gray-200 shadow-sm">
-                <Truck className="w-4 h-4 text-[#154734]" />
-                <span>Express Temperature Transport</span>
+            {/* Assurances */}
+            <div className="grid grid-cols-2 gap-4 text-sm text-ink-soft">
+              <div className="flex items-start gap-2.5">
+                <Truck className="w-4 h-4 text-emerald-default shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span>Temperature-controlled express transport</span>
               </div>
-              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white border border-gray-200 shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-[#154734]" />
-                <span>7-Day Live Health Guarantee</span>
+              <div className="flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-default shrink-0 mt-0.5" strokeWidth={1.5} />
+                <span>7-day live health guarantee</span>
               </div>
             </div>
 
-            {/* Accordion Sections */}
-            <div className="space-y-2 pt-4 border-t border-gray-200">
-              
-              {/* Accordion 1: Description & Story */}
-              <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 'description' ? null : 'description')}
-                  className="w-full p-4 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[#154734]"
-                >
-                  <span>Description & Heritage Story</span>
-                  {openAccordion === 'description' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openAccordion === 'description' && (
-                  <div className="p-4 pt-0 text-xs text-slate-700 leading-relaxed whitespace-pre-line border-t border-gray-100">
-                    {product.description}
-                  </div>
-                )}
-              </div>
-
-              {/* Accordion 2: Botanical Care Guide */}
-              <div className="border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm">
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 'care' ? null : 'care')}
-                  className="w-full p-4 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-[#154734]"
-                >
-                  <span>Care Instructions & Sunlight Guide</span>
-                  {openAccordion === 'care' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </button>
-                {openAccordion === 'care' && (
-                  <div className="p-4 pt-0 text-xs text-slate-700 leading-relaxed whitespace-pre-line border-t border-gray-100">
-                    {product.careInstructions || 'Standard care: Water when topsoil dries. Keep in bright indirect light.'}
-                  </div>
-                )}
-              </div>
-
+            {/* Accordions */}
+            <div className="border-t border-line">
+              {product.description && (
+                <Accordion id="description" title="Description" openId={openAccordion} setOpenId={setOpenAccordion}>
+                  {product.description}
+                </Accordion>
+              )}
+              <Accordion id="care" title="Care instructions" openId={openAccordion} setOpenId={setOpenAccordion}>
+                {product.careInstructions ||
+                  'Water when the topsoil feels dry to a depth of two centimetres. Keep in bright, indirect light and rotate monthly for even growth.'}
+              </Accordion>
+              {product.craftsmanshipStory && (
+                <Accordion id="craft" title="Origin & craftsmanship" openId={openAccordion} setOpenId={setOpenAccordion}>
+                  {product.craftsmanshipStory}
+                </Accordion>
+              )}
+              <Accordion id="shipping" title="Shipping & returns" openId={openAccordion} setOpenId={setOpenAccordion}>
+                Complimentary express shipping on orders above ₹1,999. Live plants carry a 7-day replacement
+                guarantee from the date of delivery. Artisan pieces may be returned within 7 days if unused and in
+                original packaging.
+              </Accordion>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* Storytelling Strip for Arts / Heritage Items */}
-      {product.craftsmanshipStory && (
-        <section className="max-w-7xl mx-auto px-4">
-          <div className="bg-white p-8 md:p-12 rounded-3xl border border-gray-200 shadow-md grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-            <div className="md:col-span-8 space-y-3">
-              <span className="px-3 py-1 rounded-full bg-[#F0F5F2] text-[#154734] text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5 w-fit border border-[#154734]/20">
-                <Award className="w-3.5 h-3.5 text-[#154734]" /> Master Artisan Craftsmanship
-              </span>
-              <h3 className="font-serif text-2xl text-slate-900 font-bold">Origin & Ancestral Heritage</h3>
-              <p className="text-xs md:text-sm text-slate-700 leading-relaxed">
-                {product.craftsmanshipStory}
-              </p>
-            </div>
-            <div className="md:col-span-4 flex justify-center">
-              <div className="p-4 rounded-2xl bg-[#F0F5F2] border border-gray-200 text-center">
-                <Sparkles className="w-8 h-8 text-[#154734] mx-auto mb-2" />
-                <h5 className="font-display font-bold text-xs text-slate-900">Handcrafted Certificate</h5>
-                <p className="text-[10px] text-slate-500 mt-1">Includes signed lineage certificate by master artisan</p>
-              </div>
-            </div>
+      {/* Related */}
+      {related.length > 0 && (
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pt-20 sm:pt-28">
+          <div className="mb-8 space-y-2">
+            <span className="type-eyebrow text-emerald-default block">You may also like</span>
+            <h2 className="type-heading text-2xl sm:text-[2rem] text-ink">More from {product.categoryName}</h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {related.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
           </div>
         </section>
       )}
 
-
-
-
-
-      {/* Sticky Mobile Add to Cart Bar */}
-      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 p-4 z-40 flex items-center justify-between shadow-2xl">
-        <div>
-          <span className="text-[10px] text-slate-500 block line-clamp-1">{product.name}</span>
-          <span className="font-serif font-bold text-lg text-[#154734]">₹{currentPrice.toLocaleString('en-IN')}</span>
+      {/* Mobile sticky bar */}
+      <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-line px-4 py-3 z-40 flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs text-ink-soft truncate">{product.name}</p>
+          <p className="type-price text-lg text-ink">{formatPrice(currentPrice * quantity)}</p>
         </div>
         <button
           onClick={handleAddToCart}
-          className="bg-[#154734] text-white px-6 py-3 rounded-full font-bold text-xs tracking-wider flex items-center gap-1.5 shadow-md"
+          disabled={isOutOfStock}
+          className="px-6 py-3 bg-emerald-default disabled:bg-line disabled:text-ink-faint text-white text-[11px] uppercase tracking-[0.16em] shrink-0 transition-colors"
         >
-          <ShoppingBag className="w-4 h-4" /> ADD TO CART
+          {isOutOfStock ? 'Sold out' : addedSuccess ? 'Added' : 'Add to cart'}
         </button>
       </div>
-
     </div>
   );
 }

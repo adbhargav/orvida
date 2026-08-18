@@ -1,147 +1,260 @@
 @import "tailwindcss";
 
+/* =========================================================================
+   ORVIDA design tokens
+
+   One brand colour (emerald), a restrained gold reserved for genuine accents,
+   and a warm neutral ramp. Luxury reads through spacing, hairlines and type
+   weight rather than gradients, heavy shadows and saturated fills.
+   ========================================================================= */
+
 @theme {
+  /* Brand */
   --color-emerald-default: #154734;
   --color-emerald-deep: #0F3526;
   --color-emerald-darker: #0B281E;
-  --color-emerald-light: #E8F2EC;
-  --color-emerald-subtle: #F0F5F2;
-  
-  --color-gold-light: #FFE9A8;
-  --color-gold-mid: #F0D585;
-  --color-gold-default: #C9972B;
-  --color-gold-deep: #8A6A16;
-  
-  --color-cream: #FAF9F6;
+  --color-emerald-light: #EBF1ED;
+  --color-emerald-subtle: #F4F7F5;
+
+  /* Accent — used sparingly, never as a body colour */
+  --color-gold-light: #E8D5A6;
+  --color-gold-mid: #C9A961;
+  --color-gold-default: #A8823C;
+  --color-gold-deep: #7A5E28;
+
+  /* Neutrals */
+  --color-canvas: #FBFAF7;
+  --color-surface: #FFFFFF;
+  --color-cream: #FBFAF7;
   --color-cream-card: #FFFFFF;
-  --color-cream-warm: #F4F0E8;
-  --color-charcoal: #111827;
-  --color-charcoal-muted: #4B5563;
-  
+  --color-cream-warm: #F5F2EB;
+
+  --color-ink: #16211C;
+  --color-ink-soft: #5A6A62;
+  --color-ink-faint: #8A968F;
+  --color-line: #E5E7E2;
+  --color-line-strong: #D3D8D2;
+
+  --color-charcoal: #16211C;
+  --color-charcoal-muted: #5A6A62;
+
+  /* Type */
   --font-display: 'Poppins', sans-serif;
-  --font-serif: 'Playfair Display', serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
   --font-body: 'Manrope', sans-serif;
   --font-sans: 'Inter', sans-serif;
 }
 
+/* -------------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  background-color: #FAF9F6;
-  color: #111827;
+  background-color: #FBFAF7;
+  color: #16211C;
   font-family: var(--font-body), sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(21, 71, 52, 0.14);
+  color: #0F3526;
+}
+
+/* Visible, on-brand focus ring for keyboard users only. */
+:focus-visible {
+  outline: 2px solid #154734;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+img {
+  max-width: 100%;
 }
 
 @layer utilities {
-  .bg-gold-gradient {
-    background: linear-gradient(135deg, #154734 0%, #1E6047 50%, #2A7C5C 100%);
+  /* ---------------------------------------------------------------------
+     Editorial type
+     Luxury headings: serif, normal weight, tight leading, slight negative
+     tracking. The previous build used extrabold sans everywhere, which is
+     what made it read as a template.
+     --------------------------------------------------------------------- */
+
+  .type-display {
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
   }
 
-  .bg-gold-gradient-hover {
-    background: linear-gradient(135deg, #0F3526 0%, #154734 50%, #1E6047 100%);
+  .type-heading {
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.18;
   }
 
-  .text-gold-gradient {
-    background: linear-gradient(135deg, #154734 0%, #C9972B 50%, #8A6A16 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  /* Small caps label above a heading — the editorial "eyebrow". */
+  .type-eyebrow {
+    font-family: var(--font-body), sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1;
   }
 
-  .border-gold-hairline {
-    border-color: rgba(21, 71, 52, 0.15);
+  .type-price {
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
   }
 
-  .border-gold-glow {
-    border-color: rgba(21, 71, 52, 0.4);
-    box-shadow: 0 0 15px rgba(21, 71, 52, 0.1);
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
-  .shadow-emerald-glow {
-    box-shadow: 0 20px 40px -15px rgba(21, 71, 52, 0.2);
+  /* ---------------------------------------------------------------------
+     Surfaces — hairline borders instead of drop shadows
+     --------------------------------------------------------------------- */
+
+  .surface-card {
+    background: #FFFFFF;
+    border: 1px solid #E5E7E2;
   }
 
-  .shadow-gold-soft {
-    box-shadow: 0 10px 30px -5px rgba(21, 71, 52, 0.08);
+  .surface-raised {
+    background: #FFFFFF;
+    border: 1px solid #E5E7E2;
+    box-shadow: 0 1px 2px rgba(22, 33, 28, 0.04);
   }
 
-  .glass-emerald {
-    background: rgba(240, 245, 242, 0.9);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  .hairline {
+    border-color: #E5E7E2;
   }
 
-  .glass-dark {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+  .shadow-soft {
+    box-shadow: 0 1px 2px rgba(22, 33, 28, 0.04);
   }
 
+  .shadow-lifted {
+    box-shadow: 0 12px 32px -16px rgba(22, 33, 28, 0.18);
+  }
+
+  .shadow-overlay {
+    box-shadow: 0 24px 64px -24px rgba(22, 33, 28, 0.28);
+  }
+
+  /* Legacy aliases kept so existing markup keeps rendering sensibly. */
+  .border-gold-hairline { border-color: #E5E7E2; }
+  .shadow-emerald-glow { box-shadow: 0 12px 32px -16px rgba(21, 71, 52, 0.18); }
+  .shadow-gold-soft { box-shadow: 0 1px 2px rgba(22, 33, 28, 0.04); }
+
+  .bg-gold-gradient { background: #154734; }
+  .bg-gold-gradient-hover { background: #0F3526; }
+  .text-gold-gradient { color: #154734; }
+
+  .glass-emerald,
+  .glass-dark,
   .glass-light {
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* ---------------------------------------------------------------------
+     Interaction
+     --------------------------------------------------------------------- */
+
+  /* Underline that draws in from the left on hover. */
+  .link-underline {
+    position: relative;
+  }
+
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .link-underline:hover::after {
+    transform: scaleX(1);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
-/* Custom Scrollbar */
+/* -------------------------------------------------------------------------
+   Scrollbar
+   ------------------------------------------------------------------------- */
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF9F6;
+  background: #FBFAF7;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #C2D6CB;
-  border-radius: 4px;
+  background: #D3D8D2;
+  border-radius: 999px;
+  border: 3px solid #FBFAF7;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #154734;
+  background: #A8B3AC;
 }
 
-/* Shine Sweep Animation */
-@keyframes shine {
-  0% { transform: translateX(-100%) rotate(25deg); }
-  100% { transform: translateX(200%) rotate(25deg); }
+/* -------------------------------------------------------------------------
+   Motion
+   ------------------------------------------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.animate-shine {
-  position: relative;
-  overflow: hidden;
+.animate-fadeIn {
+  animation: fadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.animate-shine::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  transform: rotate(30deg);
-  animation: shine 4s infinite ease-in-out;
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Shimmer placeholder */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.animate-riseIn {
+  animation: riseIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.animate-shimmer {
-  background: linear-gradient(90deg, rgba(21, 71, 52, 0.04) 25%, rgba(21, 71, 52, 0.1) 50%, rgba(21, 71, 52, 0.04) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
+/* The shimmer skeleton was removed deliberately: a pulsing placeholder grid
+   reads as buffering, which undercuts the calm the rest of the design aims
+   for. Content areas reserve their height and fade in instead. */
 
-/* Continuous Marquee Ticker Animation */
 @keyframes marquee {
   0% { transform: translateX(0%); }
   100% { transform: translateX(-50%); }
@@ -150,11 +263,26 @@ body {
 .animate-marquee {
   display: flex;
   width: max-content;
-  animation: marquee 22s linear infinite;
+  animation: marquee 45s linear infinite;
 }
 
 .animate-marquee:hover {
   animation-play-state: paused;
 }
 
+/* Respect users who ask for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 
+  .animate-marquee {
+    animation: none;
+    transform: none;
+  }
+}

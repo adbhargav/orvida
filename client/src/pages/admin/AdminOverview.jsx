@@ -1,178 +1,166 @@
-import React from 'react';
-import { DollarSign, Package, Users, TrendingUp, ShoppingBag, ArrowUpRight, ShieldCheck, Sparkles, Download } from 'lucide-react';
-import { PRODUCTS } from '../../data/mockData';
+import React, { useState, useEffect, useCallback } from 'react';
+import { IndianRupee, Package, Users, ShoppingBag, Loader2, AlertCircle, Download } from 'lucide-react';
+import { api } from '../../services/api';
+
+const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+
+const STATUS_TONE = {
+  Delivered: 'bg-emerald-light text-emerald-deep',
+  Shipped: 'bg-sky-50 text-sky-800',
+  'Out for Delivery': 'bg-sky-50 text-sky-800',
+  Packed: 'bg-indigo-50 text-indigo-800',
+  Processing: 'bg-amber-50 text-amber-800',
+  Cancelled: 'bg-rose-50 text-rose-700',
+};
 
 export default function AdminOverview() {
-  const recentOrders = [
-    { id: 'ORD-9821', customer: 'Aarav Sharma', items: '2x Variegated Alba', total: '₹14,998', status: 'Delivered', date: '10 mins ago' },
-    { id: 'ORD-9820', customer: 'Priya Verma', items: '1x Bastar Brass Statue', total: '₹18,500', status: 'Processing', date: '35 mins ago' },
-    { id: 'ORD-9819', customer: 'Vikram Malhotra', items: '1x Monsoon Plant Trunk', total: '₹12,499', status: 'Shipped', date: '1 hour ago' },
-    { id: 'ORD-9818', customer: 'Ananya Roy', items: '3x Sansevieria Trifasciata', total: '₹4,497', status: 'Delivered', date: '3 hours ago' },
-    { id: 'ORD-9817', customer: 'Rohan Gupta', items: '1x Ficus Bonsai Specimen', total: '₹8,990', status: 'Delivered', date: '5 hours ago' }
-  ];
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleExportOverviewCSV = () => {
-    const headers = ['Order ID', 'Customer', 'Items', 'Total Amount', 'Status', 'Date'];
-    const rows = recentOrders.map(o => [o.id, `"${o.customer}"`, `"${o.items}"`, `"${o.total}"`, o.status, `"${o.date}"`]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+  const loadMetrics = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.dashboard.getMetrics();
+      setMetrics(res.metrics);
+    } catch (err) {
+      // Previously this page displayed invented figures (₹14,82,900 revenue,
+      // 1,420 customers) that were hard-coded into the markup. It now reports
+      // only what the database actually holds.
+      setError(err.message || 'Could not load store metrics.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMetrics();
+  }, [loadMetrics]);
+
+  const handleExportCSV = () => {
+    if (!metrics?.recentOrders?.length) return;
+    const headers = ['Order', 'Customer', 'Total', 'Status', 'Payment', 'Placed'];
+    const rows = metrics.recentOrders.map((o) => [
+      o.order_number || o.id,
+      `"${(o.customer_name || 'Guest').replace(/"/g, '""')}"`,
+      o.total,
+      o.status,
+      o.payment_status,
+      new Date(o.created_at).toISOString(),
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ORIVIDA_Overview_Audit_${Date.now()}.csv`);
-    document.body.appendChild(link);
+    link.href = url;
+    link.download = `ORIVIDA_Recent_Orders_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
+  const cards = metrics
+    ? [
+        { label: 'Revenue (paid orders)', value: money(metrics.totalRevenue), icon: IndianRupee },
+        { label: 'Orders placed', value: metrics.totalOrders.toLocaleString('en-IN'), icon: ShoppingBag },
+        { label: 'Products live', value: metrics.totalProducts.toLocaleString('en-IN'), icon: Package },
+        { label: 'Registered customers', value: metrics.totalUsers.toLocaleString('en-IN'), icon: Users },
+      ]
+    : [];
+
   return (
-    <div className="space-y-8 p-6 sm:p-8 bg-[#FAF9F6] min-h-screen">
-      {/* Title Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-5">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">Real-Time Store Performance</span>
-          <h1 className="font-display font-extrabold text-3xl text-slate-900 mt-1">Atelier Dashboard Overview</h1>
+    <div className="min-h-screen bg-canvas p-6 sm:p-10 space-y-8">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 border-b border-line pb-6">
+        <div className="space-y-1.5">
+          <span className="type-eyebrow text-emerald-default">Store performance</span>
+          <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">Overview</h1>
+          <p className="text-sm text-ink-soft">Live figures from the ORIVIDA database</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportOverviewCSV}
-            className="bg-white hover:bg-gray-100 border border-gray-300 text-[#154734] px-5 py-2.5 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm transition"
-          >
-            <Download className="w-4 h-4" /> EXPORT AUDIT (CSV)
-          </button>
+        <button
+          onClick={handleExportCSV}
+          disabled={!metrics?.recentOrders?.length}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-line bg-white text-sm font-medium text-ink hover:border-emerald-default hover:text-emerald-default disabled:opacity-40 transition"
+        >
+          <Download className="w-4 h-4" /> Export recent orders
+        </button>
+      </header>
 
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm text-xs font-semibold text-slate-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Live Store Status: Active</span>
-          </div>
+      {loading ? (
+        <div className="surface-card rounded-lg p-16 flex flex-col items-center gap-3 text-ink-soft">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <p className="text-sm">Loading metrics…</p>
         </div>
-      </div>
-
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>TOTAL MONTHLY REVENUE</span>
-            <div className="p-2 rounded-xl bg-[#E8F2EC] text-[#154734]">
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="font-serif font-extrabold text-3xl text-[#154734]">₹14,82,900</p>
-          <div className="flex items-center gap-1 text-xs text-emerald-600 font-bold">
-            <ArrowUpRight className="w-4 h-4" />
-            <span>+18.4% vs previous 30 days</span>
-          </div>
+      ) : error ? (
+        <div className="surface-card rounded-lg p-16 text-center space-y-3">
+          <AlertCircle className="w-7 h-7 text-rose-500 mx-auto" />
+          <p className="text-sm text-ink font-medium">{error}</p>
+          <button onClick={loadMetrics} className="text-sm text-emerald-default link-underline">Try again</button>
         </div>
-
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>ACTIVE CATALOG ITEMS</span>
-            <div className="p-2 rounded-xl bg-[#E8F2EC] text-[#154734]">
-              <Package className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="font-serif font-extrabold text-3xl text-slate-900">{PRODUCTS.length}</p>
-          <p className="text-xs text-slate-500 font-medium">Across 4 luxury category pillars</p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>REGISTERED VIP USERS</span>
-            <div className="p-2 rounded-xl bg-[#E8F2EC] text-[#154734]">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="font-serif font-extrabold text-3xl text-slate-900">1,420</p>
-          <p className="text-xs text-emerald-600 font-bold">+142 new signups this week</p>
-        </div>
-
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>TOTAL ORDERS COMPLETED</span>
-            <div className="p-2 rounded-xl bg-[#E8F2EC] text-[#154734]">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-          </div>
-          <p className="font-serif font-extrabold text-3xl text-slate-900">3,894</p>
-          <p className="text-xs text-slate-500 font-medium">99.4% Fulfillment Success Rate</p>
-        </div>
-      </div>
-
-      {/* Grid Section: Recent Orders & Top Selling Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Recent Orders Ledger */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-            <div>
-              <h3 className="font-display font-bold text-lg text-slate-900">Recent Live Orders</h3>
-              <p className="text-xs text-slate-500">Real-time incoming orders across India</p>
-            </div>
-            <span className="text-xs text-[#154734] font-bold bg-[#E8F2EC] px-3 py-1 rounded-full">
-              5 Orders Pending Dispatch
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 text-slate-500 uppercase tracking-wider font-bold">
-                  <th className="py-3 px-2">Order ID</th>
-                  <th className="py-3 px-2">Customer</th>
-                  <th className="py-3 px-2">Items</th>
-                  <th className="py-3 px-2">Total Amount</th>
-                  <th className="py-3 px-2">Status</th>
-                  <th className="py-3 px-2">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 font-medium">
-                {recentOrders.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-gray-50/80 transition">
-                    <td className="py-3.5 px-2 font-bold text-[#154734]">{ord.id}</td>
-                    <td className="py-3.5 px-2 font-bold text-slate-800">{ord.customer}</td>
-                    <td className="py-3.5 px-2 text-slate-600">{ord.items}</td>
-                    <td className="py-3.5 px-2 font-bold text-slate-900">{ord.total}</td>
-                    <td className="py-3.5 px-2">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        ord.status === 'Delivered' ? 'bg-emerald-100 text-emerald-800' :
-                        ord.status === 'Processing' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {ord.status}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-2 text-slate-400">{ord.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Top Performing Specimen Products */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-4">
-          <div className="border-b border-gray-100 pb-3">
-            <h3 className="font-display font-bold text-base text-slate-900">Top Bestselling Items</h3>
-            <p className="text-xs text-slate-500">Highest grossing inventory</p>
-          </div>
-
-          <div className="space-y-4">
-            {PRODUCTS.slice(0, 4).map((item) => (
-              <div key={item.id} className="flex items-center gap-3.5 p-2.5 rounded-2xl hover:bg-gray-50 border border-transparent hover:border-gray-200 transition">
-                <img src={item.images[0].url} alt={item.name} className="w-12 h-12 rounded-xl object-cover border border-gray-200" />
-                <div className="flex-1 overflow-hidden">
-                  <h4 className="font-bold text-xs text-slate-900 truncate">{item.name}</h4>
-                  <span className="text-[10px] text-slate-500 uppercase font-bold">{item.categoryName}</span>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {cards.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="surface-card rounded-lg p-6 space-y-3">
+                <div className="flex justify-between items-start">
+                  <span className="type-eyebrow text-ink-soft">{label}</span>
+                  <Icon className="w-4 h-4 text-emerald-default shrink-0" />
                 </div>
-                <div className="text-right">
-                  <span className="font-serif font-bold text-xs text-[#154734] block">₹{item.discountPrice.toLocaleString('en-IN')}</span>
-                  <span className="text-[10px] text-emerald-600 font-semibold">{item.reviewCount * 4} sold</span>
-                </div>
+                <p className="type-price text-3xl text-ink">{value}</p>
               </div>
             ))}
           </div>
-        </div>
 
-      </div>
+          <section className="surface-card rounded-lg overflow-hidden">
+            <div className="px-6 py-5 border-b border-line">
+              <h2 className="type-heading text-xl text-ink">Recent orders</h2>
+              <p className="text-sm text-ink-soft mt-0.5">The five most recent orders across the store</p>
+            </div>
+
+            {metrics.recentOrders.length === 0 ? (
+              <div className="p-16 text-center space-y-1.5">
+                <p className="type-heading text-lg text-ink">No orders yet</p>
+                <p className="text-sm text-ink-soft">Completed checkouts will appear here.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-emerald-subtle border-b border-line">
+                    <tr className="text-[11px] uppercase tracking-[0.12em] text-ink-soft">
+                      <th className="py-3.5 px-6 font-semibold">Order</th>
+                      <th className="py-3.5 px-6 font-semibold">Customer</th>
+                      <th className="py-3.5 px-6 font-semibold text-right">Total</th>
+                      <th className="py-3.5 px-6 font-semibold">Status</th>
+                      <th className="py-3.5 px-6 font-semibold">Placed</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {metrics.recentOrders.map((order) => (
+                      <tr key={order.id} className="hover:bg-emerald-subtle/50 transition">
+                        <td className="py-3.5 px-6 font-medium text-emerald-default tabular">
+                          {order.order_number || `#${order.id}`}
+                        </td>
+                        <td className="py-3.5 px-6 text-ink">{order.customer_name || 'Guest checkout'}</td>
+                        <td className="py-3.5 px-6 text-right type-price text-ink">{money(order.total)}</td>
+                        <td className="py-3.5 px-6">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_TONE[order.status] || 'bg-emerald-subtle text-ink-soft'}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6 text-ink-soft">
+                          {new Date(order.created_at).toLocaleDateString('en-IN', {
+                            day: 'numeric', month: 'short', year: 'numeric',
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
+      )}
     </div>
   );
 }

@@ -1,123 +1,235 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { CheckCircle2, Package, Truck, Home, Printer, ArrowRight, Sparkles } from 'lucide-react';
+import { Check, Printer, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { api } from '../services/api';
+
+const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
+
+const STAGES = ['Processing', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
 
 export default function OrderConfirmation() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Fire celebratory gold confetti
-    try {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#154734', '#C9972B', '#F0F5F2', '#FFFFFF']
-      });
-    } catch {
-      // ignore fallback
-    }
+    let cancelled = false;
 
-    const saved = localStorage.getItem('orvida_last_order');
-    if (saved) {
-      setOrder(JSON.parse(saved));
-    }
+    (async () => {
+      setLoading(true);
+      try {
+        // Read the real order rather than trusting whatever the browser
+        // happened to cache after checkout.
+        const res = await api.orders.getById(id);
+        if (cancelled) return;
+        setOrder(res.order);
+
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          confetti({
+            particleCount: 90,
+            spread: 70,
+            origin: { y: 0.5 },
+            colors: ['#154734', '#A8823C', '#E8D5A6', '#FFFFFF'],
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.status === 401
+              ? 'Please sign in to view this order.'
+              : err.status === 403 || err.status === 404
+              ? 'We could not find that order on your account.'
+              : err.message || 'Could not load this order.'
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [id]);
 
-  const handlePrint = () => {
-    window.print();
-  };
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-ink-soft">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <p className="text-sm">Confirming your order…</p>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-6">
+        <AlertCircle className="w-8 h-8 text-ink-faint" strokeWidth={1.5} />
+        <div className="space-y-1.5">
+          <p className="type-heading text-2xl text-ink">Order unavailable</p>
+          <p className="text-sm text-ink-soft max-w-md">{error}</p>
+        </div>
+        <Link
+          to="/account"
+          className="px-7 py-3 border border-ink text-ink hover:bg-ink hover:text-white text-[11px] uppercase tracking-[0.16em] transition-colors"
+        >
+          Go to your account
+        </Link>
+      </div>
+    );
+  }
+
+  const isCancelled = order.status === 'Cancelled';
+  const currentStage = STAGES.indexOf(order.status);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-16 space-y-8 bg-[#FAF9F6]">
-      
-      {/* Header Banner */}
-      <div className="bg-white p-8 md:p-12 rounded-3xl border border-gray-200 text-center space-y-4 shadow-md relative overflow-hidden">
-        <div className="p-4 rounded-full bg-[#F0F5F2] border border-[#154734] w-20 h-20 mx-auto flex items-center justify-center">
-          <CheckCircle2 className="w-10 h-10 text-[#154734]" />
-        </div>
+    <div className="bg-canvas">
+      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-14 sm:py-20 space-y-10">
+        {/* Confirmation */}
+        <header className="text-center space-y-5">
+          <div className="w-14 h-14 rounded-full bg-emerald-light border border-emerald-default/30 flex items-center justify-center mx-auto">
+            <Check className="w-6 h-6 text-emerald-default" />
+          </div>
 
-        <span className="text-xs font-bold uppercase tracking-widest text-[#154734]">Order Placed Successfully</span>
-        <h1 className="font-serif font-bold text-3xl md:text-4xl text-slate-900">
-          Thank You For Choosing ORIVIDA
-        </h1>
-        <p className="text-xs text-slate-600 max-w-md mx-auto">
-          Your botanical luxury items are being prepped at our nursery atelier in Indiranagar, Bengaluru.
-        </p>
-        <p className="text-sm font-mono font-bold text-[#154734]">
-          Order Reference: #{id || order?.orderId || 'ORI-ORD-982131'}
-        </p>
+          <div className="space-y-2">
+            <span className="type-eyebrow text-emerald-default block">Order confirmed</span>
+            <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">Thank you for your order</h1>
+            <p className="text-ink-soft max-w-md mx-auto leading-relaxed">
+              Your pieces are being prepared at our nursery atelier. A confirmation has been sent to{' '}
+              <span className="text-ink">{order.shippingAddress?.email}</span>.
+            </p>
+          </div>
 
-        {/* Timeline Tracker */}
-        <div className="pt-8 border-t border-gray-100 grid grid-cols-4 gap-2 text-center text-[10px] text-slate-600">
-          <div className="space-y-1">
-            <div className="w-8 h-8 rounded-full bg-[#154734] text-white font-bold mx-auto flex items-center justify-center">1</div>
-            <p className="font-bold text-[#154734]">Confirmed</p>
-          </div>
-          <div className="space-y-1">
-            <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-300 mx-auto flex items-center justify-center text-slate-700">2</div>
-            <p>Nursery Prep</p>
-          </div>
-          <div className="space-y-1">
-            <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-300 mx-auto flex items-center justify-center text-slate-700">3</div>
-            <p>Dispatched</p>
-          </div>
-          <div className="space-y-1">
-            <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-300 mx-auto flex items-center justify-center text-slate-700">4</div>
-            <p>Delivered</p>
-          </div>
-        </div>
-      </div>
+          <p className="type-price text-lg text-ink">{order.orderNumber}</p>
+        </header>
 
-      {/* Invoice Details Box */}
-      {order && (
-        <div className="p-8 rounded-3xl bg-white border border-gray-200 space-y-6 shadow-sm">
-          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-            <div>
-              <h3 className="font-display font-bold text-lg text-slate-900">Luxury Dispatch Invoice</h3>
-              <p className="text-xs text-slate-500">Date: {order.date}</p>
+        {/* Progress */}
+        {!isCancelled && (
+          <div className="surface-card p-6 sm:p-8">
+            <div className="flex justify-between relative">
+              <div className="absolute top-[7px] left-0 right-0 h-px bg-line" aria-hidden="true" />
+              <div
+                className="absolute top-[7px] left-0 h-px bg-emerald-default transition-all duration-700"
+                style={{ width: `${(Math.max(0, currentStage) / (STAGES.length - 1)) * 100}%` }}
+                aria-hidden="true"
+              />
+              {STAGES.map((stage, idx) => (
+                <div key={stage} className="relative z-10 flex flex-col items-center gap-2 flex-1">
+                  <span
+                    className={`w-3.5 h-3.5 rounded-full border-2 transition-colors ${
+                      idx <= currentStage
+                        ? 'bg-emerald-default border-emerald-default'
+                        : 'bg-white border-line-strong'
+                    }`}
+                  />
+                  <span className={`text-[10px] text-center leading-tight ${idx <= currentStage ? 'text-ink' : 'text-ink-faint'}`}>
+                    {stage}
+                  </span>
+                </div>
+              ))}
             </div>
+          </div>
+        )}
+
+        {isCancelled && (
+          <div className="px-5 py-4 bg-rose-50 border border-rose-200 text-sm text-rose-800">
+            This order was cancelled. Any payment will be refunded to the original method within 5–7 business days.
+          </div>
+        )}
+
+        {/* Summary */}
+        <section className="surface-card">
+          <div className="px-6 sm:px-8 py-5 border-b border-line flex justify-between items-center">
+            <h2 className="type-heading text-lg text-ink">Order summary</h2>
             <button
-              onClick={handlePrint}
-              className="flex items-center gap-1.5 text-xs text-[#154734] border border-[#154734] px-4 py-2 rounded-full hover:bg-[#F0F5F2]"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-emerald-default transition-colors print:hidden"
             >
-              <Printer className="w-4 h-4" /> Print / Save Invoice
+              <Printer className="w-3.5 h-3.5" /> Print
             </button>
           </div>
 
-          <div className="space-y-3">
-            {order.items?.map(item => (
-              <div key={item.id} className="flex justify-between items-center text-xs text-slate-700 py-2 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-gray-100" />
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{item.name}</h4>
-                    <p className="text-[10px] text-slate-500">Qty: {item.quantity} · {item.variant}</p>
-                  </div>
+          <ul className="divide-y divide-line">
+            {order.items.map((item, idx) => (
+              <li key={idx} className="px-6 sm:px-8 py-4 flex items-center gap-4">
+                {item.image && (
+                  <img src={item.image} alt="" className="w-14 h-16 object-cover border border-line shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-ink">{item.name}</p>
+                  <p className="text-xs text-ink-faint">
+                    Qty {item.quantity}{item.variantName ? ` · ${item.variantName}` : ''}
+                  </p>
                 </div>
-                <span className="font-serif font-bold text-[#154734]">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
-              </div>
+                <span className="type-price text-sm text-ink shrink-0">
+                  {formatPrice(item.price * item.quantity)}
+                </span>
+              </li>
             ))}
+          </ul>
+
+          <dl className="px-6 sm:px-8 py-5 space-y-2 text-sm border-t border-line">
+            <div className="flex justify-between">
+              <dt className="text-ink-soft">Subtotal</dt>
+              <dd className="text-ink tabular">{formatPrice(order.subtotal)}</dd>
+            </div>
+            {order.discountAmount > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">Discount</dt>
+                <dd className="text-emerald-default tabular">−{formatPrice(order.discountAmount)}</dd>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <dt className="text-ink-soft">Shipping</dt>
+              <dd className="text-ink tabular">
+                {order.shippingFee === 0 ? 'Complimentary' : formatPrice(order.shippingFee)}
+              </dd>
+            </div>
+            <div className="flex justify-between pt-3 border-t border-line">
+              <dt className="type-heading text-base text-ink">Total paid</dt>
+              <dd className="type-price text-lg text-ink">{formatPrice(order.total)}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* Delivery */}
+        <section className="surface-card p-6 sm:p-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="space-y-1.5">
+            <span className="type-eyebrow text-ink-soft">Delivering to</span>
+            <address className="text-sm text-ink not-italic leading-relaxed">
+              {order.shippingAddress?.fullName}<br />
+              {order.shippingAddress?.address}<br />
+              {order.shippingAddress?.city}, {order.shippingAddress?.state} {order.shippingAddress?.pincode}
+              {order.shippingAddress?.phone && (
+                <span className="block text-ink-soft tabular mt-1">{order.shippingAddress.phone}</span>
+              )}
+            </address>
           </div>
 
-          <div className="flex justify-between font-serif font-bold text-xl text-[#154734] pt-2">
-            <span>Total Paid</span>
-            <span>₹{order.total?.toLocaleString('en-IN')}</span>
+          <div className="space-y-1.5">
+            {order.trackingNumber && (
+              <p className="text-sm text-ink-soft pt-2">
+                Tracking: <span className="text-ink tabular">{order.trackingNumber}</span>
+              </p>
+            )}
           </div>
+        </section>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center print:hidden">
+          <Link
+            to="/account"
+            className="px-7 py-3.5 bg-emerald-default hover:bg-emerald-deep text-white text-[11px] uppercase tracking-[0.16em] text-center transition-colors"
+          >
+            View your orders
+          </Link>
+          <Link
+            to="/category/plants"
+            className="px-7 py-3.5 border border-ink text-ink hover:bg-ink hover:text-white text-[11px] uppercase tracking-[0.16em] text-center inline-flex items-center justify-center gap-2 transition-colors"
+          >
+            Continue shopping <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
-      )}
-
-      <div className="text-center pt-4">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 bg-[#154734] hover:bg-[#0F3526] text-white px-8 py-3.5 rounded-full font-bold text-xs tracking-widest shadow-md hover:scale-105 transition"
-        >
-          <span>CONTINUE SHOPPING</span>
-        </Link>
       </div>
-
     </div>
   );
 }

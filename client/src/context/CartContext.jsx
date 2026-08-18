@@ -1,167 +1,198 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { api } from '../services/api';
 
 const CartContext = createContext();
 
+const STORAGE_KEY = 'orvida_cart';
+const FREE_SHIPPING_THRESHOLD = 1999;
+const STANDARD_SHIPPING_FEE = 250;
+
+const readStoredCart = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    if (!Array.isArray(parsed)) return [];
+
+    // Drop entries written by the previous build. Those rows carried no
+    // variantId, which checkout now needs to price a line server-side, and
+    // they include the placeholder item that used to be seeded into every
+    // new visitor's cart.
+    return parsed.filter(
+      (item) =>
+        item &&
+        typeof item === 'object' &&
+        'variantId' in item &&
+        Number.isFinite(Number(item.productId)) &&
+        Number.isFinite(Number(item.price))
+    );
+  } catch {
+    return [];
+  }
+};
+
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem('orvida_cart');
-      return saved ? JSON.parse(saved) : [
-        {
-          id: 'cart-1',
-          productId: 1,
-          name: 'Royal Monstera Deliciosa (Variegated Alba)',
-          price: 3999,
-          image: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=400&q=80',
-          variant: 'Medium (18-22 inches) / Emerald & Gold Brass Vessel',
-          quantity: 1
-        }
-      ];
-    } catch {
-      return [];
-    }
-  });
+  // Starts empty. The previous build seeded a Monstera into every new
+  // visitor's cart, so first-time shoppers saw "1" in the header.
+  const [cartItems, setCartItems] = useState(readStoredCart);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [promoCode, setPromoCode] = useState('');
-  const [discountAmount, setDiscountAmount] = useState(0);
   const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   useEffect(() => {
     try {
-      localStorage.setItem('orvida_cart', JSON.stringify(cartItems));
-    } catch (e) {
-      console.error('Failed to save cart to localStorage', e);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems));
+    } catch {
+      // ignore quota/private-mode failures
     }
   }, [cartItems]);
 
-  const addToCart = (product, selectedVariant = null, quantity = 1) => {
-    setCartItems(prevItems => {
-      const variantText = selectedVariant ? `${selectedVariant.value}` : 'Standard';
-      const itemPrice = product.discountPrice || product.price;
-      const finalPrice = itemPrice + (selectedVariant?.priceDelta || 0);
+  const subtotal = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0),
+    [cartItems]
+  );
+
+  const totalItemsCount = useMemo(
+    () => cartItems.reduce((acc, item) => acc + item.quantity, 0),
+    [cartItems]
+  );
+
+  const addToCart = useCallback((product, selectedVariant = null, quantity = 1) => {
+    setCartItems((prevItems) => {
+      const variantId = selectedVariant?.id ?? null;
+      const variantLabel = selectedVariant?.value || 'Standard';
+      const basePrice = product.effectivePrice ?? product.discountPrice ?? product.price;
+      const unitPrice = Number(basePrice) + Number(selectedVariant?.priceDelta || 0);
+
       const existingIndex = prevItems.findIndex(
-        item => item.productId === product.id && item.variant === variantText
+        (item) => item.productId === product.id && item.variantId === variantId
       );
 
       if (existingIndex > -1) {
-        const updated = [...prevItems];
-        updated[existingIndex].quantity += quantity;
-        return updated;
-      } else {
-        return [
-          ...prevItems,
-          {
-            id: `cart-${Date.now()}-${Math.random()}`,
-            productId: product.id,
-            name: product.name,
-            price: finalPrice,
-            image: product.images[0]?.url || '',
-            variant: variantText,
-            quantity: quantity,
-            slug: product.slug
-          }
-        ];
+        return prevItems.map((item, idx) =>
+          idx === existingIndex ? { ...item, quantity: item.quantity + quantity } : item
+        );
       }
+
+      return [
+        ...prevItems,
+        {
+          id: `cart-${product.id}-${variantId ?? 'base'}`,
+          productId: product.id,
+          variantId,
+          name: product.name,
+          slug: product.slug,
+          price: unitPrice,
+          image: product.images?.[0]?.url || '',
+          variant: variantLabel,
+          quantity,
+        },
+      ];
     });
     setIsCartOpen(true);
-  };
+  }, []);
 
-  const updateQuantity = (cartItemId, newQty) => {
-    if (newQty <= 0) {
-      removeFromCart(cartItemId);
-      return;
-    }
-    setCartItems(prev => prev.map(item => item.id === cartItemId ? { ...item, quantity: newQty } : item));
-  };
+  const removeFromCart = useCallback((cartItemId) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== cartItemId));
+  }, []);
 
-  const removeFromCart = (cartItemId) => {
-    setCartItems(prev => prev.filter(item => item.id !== cartItemId));
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-    setAppliedPromo(null);
-    setDiscountAmount(0);
-  };
-
-  const applyPromo = (code) => {
-    setPromoError('');
-    if (!code) return;
-    const cleanCode = code.trim().toUpperCase();
-    
-    if (cleanCode === 'WELCOME10' || cleanCode === 'ORIVIDA10') {
-      setAppliedPromo(cleanCode);
-      setDiscountAmount(subtotal * 0.10);
-    } else if (cleanCode === 'ORIVIDA15') {
-      if (subtotal >= 2999) {
-        setAppliedPromo('ORIVIDA15');
-        setDiscountAmount(subtotal * 0.15);
-      } else {
-        setPromoError('Minimum order value of ₹2,999 required for ORIVIDA15');
+  const updateQuantity = useCallback(
+    (cartItemId, newQty) => {
+      if (newQty <= 0) {
+        removeFromCart(cartItemId);
+        return;
       }
-    } else if (cleanCode === 'LUXURY20') {
-      if (subtotal >= 4999) {
-        setAppliedPromo('LUXURY20');
-        setDiscountAmount(subtotal * 0.20);
-      } else {
-        setPromoError('Minimum order value of ₹4,999 required for LUXURY20');
-      }
-    } else if (cleanCode === 'MONSOON50') {
-      if (subtotal >= 9999) {
-        setAppliedPromo('MONSOON50');
-        setDiscountAmount(subtotal * 0.50);
-      } else {
-        setPromoError('Minimum order value of ₹9,999 required for MONSOON50');
-      }
-    } else if (cleanCode === 'LUXURY2000') {
-      if (subtotal >= 5000) {
-        setAppliedPromo('LUXURY2000');
-        setDiscountAmount(2000);
-      } else {
-        setPromoError('Minimum order value of ₹5,000 required for LUXURY2000');
-      }
-    } else {
-      setPromoError('Invalid coupon code. Try WELCOME10, ORIVIDA15, or LUXURY20');
-    }
-  };
+      setCartItems((prev) =>
+        prev.map((item) => (item.id === cartItemId ? { ...item, quantity: newQty } : item))
+      );
+    },
+    [removeFromCart]
+  );
 
-  const removePromo = () => {
+  const removePromo = useCallback(() => {
     setAppliedPromo(null);
     setDiscountAmount(0);
     setPromoCode('');
     setPromoError('');
-  };
+  }, []);
 
-  const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const freeShippingThreshold = 1999;
-  const shippingFee = subtotal >= freeShippingThreshold || subtotal === 0 ? 0 : 250;
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
-  const totalItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+    removePromo();
+  }, [removePromo]);
+
+  /**
+   * Validates a code against the coupons table rather than a hard-coded list,
+   * so codes created in the admin panel actually work. The discount shown here
+   * is indicative — checkout re-derives it on the server.
+   */
+  const applyPromo = useCallback(
+    async (code) => {
+      const cleanCode = (code || '').trim();
+      setPromoError('');
+      if (!cleanCode) return;
+
+      setPromoLoading(true);
+      try {
+        const res = await api.coupons.validate(cleanCode.toUpperCase(), subtotal);
+        setAppliedPromo(res.coupon.code);
+        setDiscountAmount(Number(res.coupon.discountAmount) || 0);
+      } catch (err) {
+        setAppliedPromo(null);
+        setDiscountAmount(0);
+        setPromoError(err.message || 'That coupon code could not be applied.');
+      } finally {
+        setPromoLoading(false);
+      }
+    },
+    [subtotal]
+  );
+
+  // Keep a percentage discount honest when the cart contents change.
+  useEffect(() => {
+    if (appliedPromo && discountAmount > subtotal) {
+      setDiscountAmount(subtotal);
+    }
+  }, [subtotal, appliedPromo, discountAmount]);
+
+  const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : STANDARD_SHIPPING_FEE;
+  const finalTotal = Math.max(0, Math.round(subtotal - discountAmount + shippingFee));
+
+  // The minimal payload the server needs to re-price the cart itself.
+  const getPricingPayload = useCallback(
+    () => cartItems.map(({ productId, variantId, quantity }) => ({ productId, variantId, quantity })),
+    [cartItems]
+  );
 
   return (
-    <CartContext.Provider value={{
-      cartItems,
-      isCartOpen,
-      setIsCartOpen,
-      addToCart,
-      updateQuantity,
-      removeFromCart,
-      clearCart,
-      subtotal,
-      shippingFee,
-      freeShippingThreshold,
-      discountAmount,
-      appliedPromo,
-      promoError,
-      applyPromo,
-      removePromo,
-      promoCode,
-      setPromoCode,
-      finalTotal,
-      totalItemsCount
-    }}>
+    <CartContext.Provider
+      value={{
+        cartItems,
+        isCartOpen,
+        setIsCartOpen,
+        addToCart,
+        updateQuantity,
+        removeFromCart,
+        clearCart,
+        subtotal,
+        shippingFee,
+        freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+        discountAmount,
+        appliedPromo,
+        promoError,
+        promoLoading,
+        applyPromo,
+        removePromo,
+        promoCode,
+        setPromoCode,
+        finalTotal,
+        totalItemsCount,
+        getPricingPayload,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

@@ -1,203 +1,304 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Layers, ChevronRight, Image as ImageIcon, Sparkles, Download } from 'lucide-react';
-import { CATEGORIES } from '../../data/mockData';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Layers, Upload } from 'lucide-react';
+import { api } from '../../services/api';
+
+const inputClass =
+  'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
+  'focus:outline-none focus:border-emerald-default focus:ring-1 focus:ring-emerald-default/30 transition';
+
+const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft';
+
+const EMPTY = { name: '', slug: '', tagline: '', description: '', banner: '' };
+
+const slugify = (value) =>
+  value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState(CATEGORIES);
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [banner, setBanner] = useState(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    tagline: '',
-    description: '',
-    banner: 'https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=1600&q=80'
-  });
-
-  const handleExportCategoriesCSV = () => {
-    const headers = ['ID', 'Category Name', 'Slug', 'Tagline', 'Subcategories Count'];
-    const rows = categories.map(c => [c.id, `"${c.name}"`, `"${c.slug}"`, `"${c.tagline}"`, c.subcategories ? c.subcategories.length : 0]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ORIVIDA_Categories_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const notify = (type, text) => {
+    setBanner({ type, text });
+    setTimeout(() => setBanner(null), 4000);
   };
 
-  const handleDeleteCategory = (id) => {
-    if (window.confirm('Delete this category pillar from ORIVIDA?')) {
-      setCategories(prev => prev.filter(c => c.id !== id));
+  const loadCategories = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.categories.getAll();
+      setCategories(res.categories || []);
+    } catch (err) {
+      setError(err.message || 'Could not load categories.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const handleUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setFormError('');
+    try {
+      const res = await api.uploads.images([files[0]]);
+      if (res.urls?.[0]) setForm((prev) => ({ ...prev, banner: res.urls[0] }));
+    } catch (err) {
+      setFormError(err.message || 'Image upload failed.');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleSaveCategory = (e) => {
-    e.preventDefault();
-    if (editingCategory) {
-      setCategories(prev => prev.map(c => c.id === editingCategory.id ? { ...c, ...categoryForm } : c));
-    } else {
-      const newCat = {
-        id: Date.now(),
-        name: categoryForm.name,
-        slug: categoryForm.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        tagline: categoryForm.tagline,
-        description: categoryForm.description,
-        banner: categoryForm.banner,
-        subcategories: []
-      };
-      setCategories([...categories, newCat]);
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(EMPTY);
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (cat) => {
+    setEditingId(cat.id);
+    setForm({
+      name: cat.name || '',
+      slug: cat.slug || '',
+      tagline: cat.tagline || '',
+      description: cat.description || '',
+      banner: cat.banner || '',
+    });
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    if (!form.name.trim()) return setFormError('Give the category a name.');
+
+    const payload = {
+      name: form.name.trim(),
+      slug: slugify(form.slug || form.name),
+      tagline: form.tagline.trim(),
+      description: form.description.trim(),
+      banner: form.banner,
+    };
+
+    setSaving(true);
+    try {
+      if (editingId) {
+        await api.categories.update(editingId, payload);
+      } else {
+        await api.categories.create(payload);
+      }
+      setIsModalOpen(false);
+      setEditingId(null);
+      setForm(EMPTY);
+      notify('success', editingId ? 'Category updated.' : 'Category created.');
+      await loadCategories();
+    } catch (err) {
+      setFormError(err.message || `Could not ${editingId ? 'update' : 'create'} this category.`);
+    } finally {
+      setSaving(false);
     }
-    setIsModalOpen(false);
+  };
+
+  const handleDelete = async (category) => {
+    if (!window.confirm(`Delete the “${category.name}” category?`)) return;
+    try {
+      await api.categories.remove(category.id);
+      setCategories((prev) => prev.filter((c) => c.id !== category.id));
+      notify('success', `${category.name} deleted.`);
+    } catch (err) {
+      // The server refuses to orphan products, and says how many are in the way.
+      notify('error', err.message || 'Could not delete this category.');
+    }
   };
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 bg-[#FAF9F6] min-h-screen">
-      {/* Title Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-5">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">Store Architecture</span>
-          <h1 className="font-display font-extrabold text-3xl text-slate-900 mt-1">Categories Management</h1>
+    <div className="min-h-screen bg-canvas p-6 sm:p-10 space-y-8">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 border-b border-line pb-6">
+        <div className="space-y-1.5">
+          <span className="type-eyebrow text-emerald-default">Catalogue structure</span>
+          <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">Categories</h1>
+          <p className="text-sm text-ink-soft">
+            {loading ? 'Loading…' : `${categories.length} categor${categories.length === 1 ? 'y' : 'ies'} powering store navigation`}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportCategoriesCSV}
-            className="bg-white hover:bg-gray-100 border border-gray-300 text-[#154734] px-5 py-3 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm transition"
-          >
-            <Download className="w-4 h-4" /> EXPORT CATEGORIES (CSV)
-          </button>
+        <button
+          onClick={openCreate}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep transition"
+        >
+          <Plus className="w-4 h-4" /> New category
+        </button>
+      </header>
 
-          <button
-            onClick={() => {
-              setEditingCategory(null);
-              setCategoryForm({ name: '', tagline: '', description: '', banner: 'https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=1600&q=80' });
-              setIsModalOpen(true);
-            }}
-            className="bg-[#154734] hover:bg-[#0F3526] text-white px-6 py-3 rounded-full font-bold text-xs flex items-center gap-2 shadow-lg transition"
-          >
-            <Plus className="w-4 h-4" /> ADD NEW CATEGORY
-          </button>
+      {banner && (
+        <div role="status" className={`flex items-center gap-2.5 px-4 py-3 rounded-md border text-sm ${
+          banner.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-light border-emerald-default/25 text-emerald-deep'
+        }`}>
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {banner.text}
         </div>
-      </div>
+      )}
 
-      {/* Category Pillars Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {categories.map((cat) => (
-          <div key={cat.id} className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden flex flex-col justify-between">
-            <div>
-              {/* Category Header Banner */}
-              <div className="relative h-44 overflow-hidden bg-gray-100">
-                <img src={cat.banner} alt={cat.name} className="w-full h-full object-cover filter brightness-90" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                <div className="absolute bottom-4 left-6 text-white space-y-1">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#F0D585]">
-                    {cat.subcategories.length} Subcategories
-                  </span>
-                  <h3 className="font-display font-extrabold text-2xl text-white">{cat.name}</h3>
+      {loading ? (
+        <div className="surface-card rounded-lg p-16 flex flex-col items-center gap-3 text-ink-soft">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <p className="text-sm">Loading categories…</p>
+        </div>
+      ) : error ? (
+        <div className="surface-card rounded-lg p-16 text-center space-y-3">
+          <AlertCircle className="w-7 h-7 text-rose-500 mx-auto" />
+          <p className="text-sm text-ink font-medium">{error}</p>
+          <button onClick={loadCategories} className="text-sm text-emerald-default link-underline">Try again</button>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="surface-card rounded-lg p-16 text-center space-y-2">
+          <Layers className="w-7 h-7 text-ink-faint mx-auto" />
+          <p className="type-heading text-lg text-ink">No categories yet</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {categories.map((cat) => (
+            <div key={cat.id} className="surface-card rounded-lg overflow-hidden">
+              {cat.banner && (
+                <div className="aspect-[3/1] bg-emerald-subtle overflow-hidden">
+                  <img src={cat.banner} alt="" className="w-full h-full object-cover" />
                 </div>
-              </div>
-
-              {/* Subcategories Chip List */}
-              <div className="p-6 space-y-4">
-                <p className="text-xs text-slate-600 leading-relaxed font-serif italic">"{cat.tagline}"</p>
-                <div className="space-y-2">
-                  <span className="text-[10px] uppercase font-bold text-[#154734]">Active Subcategories:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {cat.subcategories.map(sub => (
-                      <span key={sub.id} className="px-3 py-1 rounded-full bg-[#E8F2EC] text-[#154734] font-bold text-xs border border-gray-200">
-                        {sub.name} ({sub.count})
-                      </span>
-                    ))}
+              )}
+              <div className="p-5 space-y-4">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="space-y-1 min-w-0">
+                    <h2 className="type-heading text-xl text-ink">{cat.name}</h2>
+                    {cat.tagline && <p className="text-sm text-ink-soft italic">{cat.tagline}</p>}
+                    <p className="text-xs text-ink-faint">/{cat.slug}</p>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => openEdit(cat)}
+                      className="p-2 rounded-md text-ink-faint hover:bg-emerald-default hover:text-white transition"
+                      aria-label={`Edit ${cat.name}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cat)}
+                      className="p-2 rounded-md text-ink-faint hover:bg-rose-600 hover:text-white transition"
+                      aria-label={`Delete ${cat.name}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
+
+                {cat.subcategories.length > 0 && (
+                  <div className="pt-3 border-t border-line space-y-2">
+                    <p className="type-eyebrow text-ink-soft">
+                      {cat.subcategories.length} subcategor{cat.subcategories.length === 1 ? 'y' : 'ies'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cat.subcategories.map((sub) => (
+                        <span key={sub.id} className="px-2.5 py-1 rounded-full bg-emerald-subtle text-ink-soft text-xs">
+                          {sub.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Category Actions Footer */}
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center text-xs">
-              <span className="text-slate-400 text-[10px]">Slug: /category/{cat.slug}</span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setEditingCategory(cat);
-                    setCategoryForm({ name: cat.name, tagline: cat.tagline, description: cat.description, banner: cat.banner });
-                    setIsModalOpen(true);
-                  }}
-                  className="px-4 py-1.5 rounded-full bg-white border border-gray-200 hover:border-[#154734] text-slate-700 font-bold transition"
-                >
-                  Edit Category
-                </button>
-                <button
-                  onClick={() => handleDeleteCategory(cat.id)}
-                  className="px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white font-bold transition"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-gray-200">
-            <h3 className="font-display font-extrabold text-xl text-slate-900">
-              {editingCategory ? 'Edit Category Pillar' : 'Add New Category Pillar'}
-            </h3>
-
-            <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-lg max-w-lg w-full my-8 shadow-overlay border border-line">
+            <div className="flex justify-between items-start p-6 border-b border-line">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Category Name *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Indoor Botanicals"
-                  value={categoryForm.name}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#154734]"
-                />
+                <span className="type-eyebrow text-emerald-default">Catalogue</span>
+                <h2 className="type-heading text-xl text-ink">{editingId ? 'Edit category' : 'New category'}</h2>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 -mr-2 -mt-2 text-ink-faint hover:text-ink transition" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="p-6 space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-rose-50 border border-rose-200 text-sm text-rose-800">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  {formError}
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className={labelClass}>Name</label>
+                <input type="text" required placeholder="Balcony Makeover" value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Tagline *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Living Luxury for Elevated Spaces"
-                  value={categoryForm.tagline}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, tagline: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#154734]"
-                />
+              <div className="space-y-1.5">
+                <label className={labelClass}>URL slug</label>
+                <input type="text" placeholder={slugify(form.name) || 'balcony-makeover'} value={form.slug}
+                  onChange={(e) => setForm({ ...form, slug: e.target.value })} className={inputClass} />
+                <p className="text-xs text-ink-faint">Leave blank to generate from the name.</p>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Banner Image URL *</label>
-                <input
-                  type="url"
-                  required
-                  value={categoryForm.banner}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, banner: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#154734]"
-                />
+              <div className="space-y-1.5">
+                <label className={labelClass}>Tagline</label>
+                <input type="text" placeholder="Transform outdoor nooks into private sanctuaries" value={form.tagline}
+                  onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={inputClass} />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2 rounded-full border border-gray-300 font-bold"
-                >
+              <div className="space-y-1.5">
+                <label className={labelClass}>Description</label>
+                <textarea rows={3} value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputClass} resize-y`} />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelClass}>Category banner</label>
+                <div className="border border-dashed border-line-strong rounded-md p-5 text-center hover:border-emerald-default transition">
+                  <input type="file" accept="image/*" id="category-banner" onChange={handleUpload} className="hidden" disabled={uploading} />
+                  <label htmlFor="category-banner" className="cursor-pointer block space-y-1.5">
+                    {uploading ? <Loader2 className="w-5 h-5 text-emerald-default mx-auto animate-spin" />
+                               : <Upload className="w-5 h-5 text-emerald-default mx-auto" />}
+                    <p className="text-sm font-medium text-ink">{uploading ? 'Uploading…' : 'Click to upload'}</p>
+                  </label>
+                </div>
+                {form.banner && (
+                  <div className="aspect-[3/1] rounded-md overflow-hidden border border-line mt-2">
+                    <img src={form.banner} alt="Category banner preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-line">
+                <button type="button" onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 mt-4 rounded-md border border-line text-sm font-medium text-ink hover:bg-emerald-subtle transition">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-full bg-[#154734] text-white font-bold hover:bg-[#0F3526]"
-                >
-                  Save Category
+                <button type="submit" disabled={saving || uploading}
+                  className="px-6 py-2.5 mt-4 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep disabled:opacity-50 transition inline-flex items-center gap-2">
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {editingId ? 'Save changes' : 'Create category'}
                 </button>
               </div>
             </form>

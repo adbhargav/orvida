@@ -1,155 +1,254 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Image as ImageIcon, Sparkles, Eye, CheckCircle2, Download } from 'lucide-react';
-import banner1 from '../../assets/hero-banner-1.png';
-import banner2 from '../../assets/hero-banner-2.png';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Trash2, X, Loader2, AlertCircle, Upload, ImageIcon } from 'lucide-react';
+import { api } from '../../services/api';
+
+const inputClass =
+  'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
+  'focus:outline-none focus:border-emerald-default focus:ring-1 focus:ring-emerald-default/30 transition';
+
+const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft';
+
+const EMPTY = { title: '', subtitle: '', image: '', link: '/category/plants', buttonText: 'Discover collection', displayOrder: 1 };
 
 export default function AdminBanners() {
-  const [banners, setBanners] = useState([
-    { id: 1, title: 'Add life to every room - Any 4 plants at ₹999/-', image: banner1, ratio: '1024 x 323 (3.17:1)', active: true, targetLink: '/category/plants' },
-    { id: 2, title: 'Your space deserves more green - Up to 50% off extra 10%', image: banner2, ratio: '1024 x 323 (3.17:1)', active: true, targetLink: '/category/plants' }
-  ]);
+  const [banners, setBanners] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [banner, setBanner] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newImage, setNewImage] = useState('https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=1600&q=80');
+  const [form, setForm] = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [formError, setFormError] = useState('');
 
-  const handleExportBannersCSV = () => {
-    const headers = ['Slide ID', 'Title', 'Aspect Ratio', 'Target Link', 'Status'];
-    const rows = banners.map(b => [b.id, `"${b.title}"`, `"${b.ratio}"`, `"${b.targetLink}"`, b.active ? 'Active' : 'Inactive']);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ORIVIDA_Hero_Banners_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const notify = (type, text) => {
+    setBanner({ type, text });
+    setTimeout(() => setBanner(null), 4000);
   };
 
-  const handleDeleteBanner = (id) => {
-    if (window.confirm('Delete this hero banner slide?')) {
-      setBanners(prev => prev.filter(b => b.id !== id));
+  const loadBanners = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.banners.getAll();
+      setBanners(res.banners || []);
+    } catch (err) {
+      setError(err.message || 'Could not load banners.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBanners();
+  }, [loadBanners]);
+
+  const handleUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    setUploading(true);
+    setFormError('');
+    try {
+      const res = await api.uploads.images([files[0]]);
+      if (res.urls?.[0]) setForm((prev) => ({ ...prev, image: res.urls[0] }));
+    } catch (err) {
+      setFormError(err.message || 'Image upload failed.');
+    } finally {
+      setUploading(false);
     }
   };
 
-  const handleAddBanner = (e) => {
-    e.preventDefault();
-    const created = {
-      id: Date.now(),
-      title: newTitle || 'Luxury Botanical Banner',
-      image: newImage,
-      ratio: 'Custom Aspect Ratio',
-      active: true,
-      targetLink: '/category/plants'
-    };
-    setBanners([...banners, created]);
-    setIsModalOpen(false);
-    setNewTitle('');
+  const handleCreate = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    if (!form.title.trim()) return setFormError('Give the banner a title.');
+    if (!form.image) return setFormError('Upload a banner image.');
+
+    setSaving(true);
+    try {
+      await api.banners.create({
+        title: form.title.trim(),
+        subtitle: form.subtitle.trim(),
+        image: form.image,
+        link: form.link.trim(),
+        buttonText: form.buttonText.trim(),
+        displayOrder: Number(form.displayOrder) || 1,
+      });
+      setIsModalOpen(false);
+      setForm(EMPTY);
+      notify('success', 'Banner published to the homepage.');
+      await loadBanners();
+    } catch (err) {
+      setFormError(err.message || 'Could not create this banner.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (item) => {
+    if (!window.confirm(`Delete the banner “${item.title}”?`)) return;
+    try {
+      await api.banners.remove(item.id);
+      setBanners((prev) => prev.filter((b) => b.id !== item.id));
+      notify('success', 'Banner deleted.');
+    } catch (err) {
+      notify('error', err.message || 'Could not delete this banner.');
+    }
   };
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 bg-[#FAF9F6] min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-5">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">Storefront Hero Visuals</span>
-          <h1 className="font-display font-extrabold text-3xl text-slate-900 mt-1">Hero Banners Manager</h1>
+    <div className="min-h-screen bg-canvas p-6 sm:p-10 space-y-8">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 border-b border-line pb-6">
+        <div className="space-y-1.5">
+          <span className="type-eyebrow text-emerald-default">Merchandising</span>
+          <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">Homepage banners</h1>
+          <p className="text-sm text-ink-soft">Shown in the hero carousel, ordered by display position</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportBannersCSV}
-            className="bg-white hover:bg-gray-100 border border-gray-300 text-[#154734] px-5 py-3 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm transition"
-          >
-            <Download className="w-4 h-4" /> EXPORT SLIDES (CSV)
-          </button>
+        <button
+          onClick={() => { setFormError(''); setIsModalOpen(true); }}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep transition"
+        >
+          <Plus className="w-4 h-4" /> New banner
+        </button>
+      </header>
 
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-[#154734] hover:bg-[#0F3526] text-white px-6 py-3 rounded-full font-bold text-xs flex items-center gap-2 shadow-lg transition"
-          >
-            <Plus className="w-4 h-4" /> UPLOAD NEW BANNER
-          </button>
+      {banner && (
+        <div role="status" className={`flex items-center gap-2.5 px-4 py-3 rounded-md border text-sm ${
+          banner.type === 'error' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-light border-emerald-default/25 text-emerald-deep'
+        }`}>
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {banner.text}
         </div>
-      </div>
+      )}
 
-      {/* Banner Cards Scroll List */}
-      <div className="space-y-6 max-h-[620px] overflow-y-auto pr-1 custom-scrollbar">
-        {banners.map((b, idx) => (
-          <div key={b.id} className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm space-y-4">
-            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-[#154734] text-white font-bold text-xs flex items-center justify-center">
-                  #{idx + 1}
-                </span>
-                <h3 className="font-bold text-sm text-slate-900">{b.title}</h3>
+      {loading ? (
+        <div className="surface-card rounded-lg p-16 flex flex-col items-center gap-3 text-ink-soft">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <p className="text-sm">Loading banners…</p>
+        </div>
+      ) : error ? (
+        <div className="surface-card rounded-lg p-16 text-center space-y-3">
+          <AlertCircle className="w-7 h-7 text-rose-500 mx-auto" />
+          <p className="text-sm text-ink font-medium">{error}</p>
+          <button onClick={loadBanners} className="text-sm text-emerald-default link-underline">Try again</button>
+        </div>
+      ) : banners.length === 0 ? (
+        <div className="surface-card rounded-lg p-16 text-center space-y-2">
+          <ImageIcon className="w-7 h-7 text-ink-faint mx-auto" />
+          <p className="type-heading text-lg text-ink">No banners yet</p>
+          <p className="text-sm text-ink-soft">Add one to control the homepage hero.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {banners.map((item) => (
+            <div key={item.id} className="surface-card rounded-lg overflow-hidden">
+              <div className="aspect-[21/9] bg-emerald-subtle overflow-hidden">
+                <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
               </div>
-              <span className="text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Live on Homepage
-              </span>
+              <div className="p-5 flex justify-between items-start gap-4">
+                <div className="space-y-1 min-w-0">
+                  <p className="type-heading text-lg text-ink truncate">{item.title}</p>
+                  {item.subtitle && <p className="text-sm text-ink-soft line-clamp-2">{item.subtitle}</p>}
+                  <p className="text-xs text-ink-faint truncate">
+                    Position {item.display_order} · links to {item.link || '—'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleDelete(item)}
+                  className="p-2 rounded-md text-ink-faint hover:bg-rose-600 hover:text-white transition shrink-0"
+                  aria-label={`Delete ${item.title}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Banner Graphic Preview */}
-            <div className="relative w-full aspect-[1024/323] rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 shadow-inner">
-              <img src={b.image} alt={b.title} className="w-full h-full object-cover" />
-            </div>
-
-            <div className="flex justify-between items-center text-xs pt-1">
-              <span className="text-slate-500 font-mono">Aspect Ratio: {b.ratio}</span>
-              <button
-                onClick={() => handleDeleteBanner(b.id)}
-                className="px-4 py-1.5 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white font-bold transition flex items-center gap-1"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Remove Slide
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-ink/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white rounded-lg max-w-lg w-full my-8 shadow-overlay border border-line">
+            <div className="flex justify-between items-start p-6 border-b border-line">
+              <div className="space-y-1">
+                <span className="type-eyebrow text-emerald-default">Merchandising</span>
+                <h2 className="type-heading text-xl text-ink">New banner</h2>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 -mr-2 -mt-2 text-ink-faint hover:text-ink transition" aria-label="Close">
+                <X className="w-5 h-5" />
               </button>
             </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Upload Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-gray-200">
-            <h3 className="font-display font-extrabold text-xl text-slate-900">Upload Hero Slide Graphic</h3>
+            <form onSubmit={handleCreate} className="p-6 space-y-4">
+              {formError && (
+                <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-rose-50 border border-rose-200 text-sm text-rose-800">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  {formError}
+                </div>
+              )}
 
-            <form onSubmit={handleAddBanner} className="space-y-4 text-xs">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Banner Campaign Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Monsoon Botanical Sale"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#154734]"
-                />
+              <div className="space-y-1.5">
+                <label className={labelClass}>Title</label>
+                <input type="text" required value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} />
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Image Graphic URL *</label>
-                <input
-                  type="url"
-                  required
-                  value={newImage}
-                  onChange={(e) => setNewImage(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:border-[#154734]"
-                />
+              <div className="space-y-1.5">
+                <label className={labelClass}>Subtitle</label>
+                <input type="text" value={form.subtitle}
+                  onChange={(e) => setForm({ ...form, subtitle: e.target.value })} className={inputClass} />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2 rounded-full border border-gray-300 font-bold"
-                >
+              <div className="space-y-1.5">
+                <label className={labelClass}>Banner image</label>
+                <div className="border border-dashed border-line-strong rounded-md p-5 text-center hover:border-emerald-default transition">
+                  <input type="file" accept="image/*" id="banner-image" onChange={handleUpload} className="hidden" disabled={uploading} />
+                  <label htmlFor="banner-image" className="cursor-pointer block space-y-1.5">
+                    {uploading ? <Loader2 className="w-5 h-5 text-emerald-default mx-auto animate-spin" />
+                               : <Upload className="w-5 h-5 text-emerald-default mx-auto" />}
+                    <p className="text-sm font-medium text-ink">{uploading ? 'Uploading…' : 'Click to upload'}</p>
+                    <p className="text-xs text-ink-faint">Wide format works best — roughly 21:9</p>
+                  </label>
+                </div>
+                {form.image && (
+                  <div className="aspect-[21/9] rounded-md overflow-hidden border border-line mt-2">
+                    <img src={form.image} alt="Banner preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Links to</label>
+                  <input type="text" value={form.link}
+                    onChange={(e) => setForm({ ...form, link: e.target.value })} className={inputClass} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Display order</label>
+                  <input type="number" min="1" value={form.displayOrder}
+                    onChange={(e) => setForm({ ...form, displayOrder: e.target.value })} className={inputClass} />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelClass}>Button text</label>
+                <input type="text" value={form.buttonText}
+                  onChange={(e) => setForm({ ...form, buttonText: e.target.value })} className={inputClass} />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-line">
+                <button type="button" onClick={() => setIsModalOpen(false)}
+                  className="px-5 py-2.5 mt-4 rounded-md border border-line text-sm font-medium text-ink hover:bg-emerald-subtle transition">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 rounded-full bg-[#154734] text-white font-bold hover:bg-[#0F3526]"
-                >
-                  Publish Slide
+                <button type="submit" disabled={saving || uploading}
+                  className="px-6 py-2.5 mt-4 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep disabled:opacity-50 transition inline-flex items-center gap-2">
+                  {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Publish banner
                 </button>
               </div>
             </form>

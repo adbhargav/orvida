@@ -1,114 +1,194 @@
-import React, { useState } from 'react';
-import { CreditCard, DollarSign, CheckCircle2, Clock, AlertTriangle, ArrowUpRight, Search, Download } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2, AlertCircle, Download, CreditCard, Search } from 'lucide-react';
+import { api } from '../../services/api';
+
+const money = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+
+const inputClass =
+  'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
+  'focus:outline-none focus:border-emerald-default focus:ring-1 focus:ring-emerald-default/30 transition';
 
 export default function AdminPayments() {
-  const transactions = [
-    { id: 'PAY-90412', orderId: 'ORD-9821', customer: 'Aarav Sharma', amount: '₹14,998', method: 'UPI (GPay)', status: 'Success', date: '2026-08-06 15:34' },
-    { id: 'PAY-90411', orderId: 'ORD-9820', customer: 'Priya Verma', amount: '₹18,500', method: 'Credit Card (HDFC)', status: 'Success', date: '2026-08-06 15:10' },
-    { id: 'PAY-90410', orderId: 'ORD-9819', customer: 'Vikram Malhotra', amount: '₹12,499', method: 'Net Banking (ICICI)', status: 'Success', date: '2026-08-06 14:45' },
-    { id: 'PAY-90409', orderId: 'ORD-9818', customer: 'Ananya Roy', amount: '₹4,497', method: 'UPI (PhonePe)', status: 'Success', date: '2026-08-06 12:30' },
-    { id: 'PAY-90408', orderId: 'ORD-9817', customer: 'Rohan Gupta', amount: '₹8,990', method: 'Debit Card (SBI)', status: 'Refunded', date: '2026-08-05 18:20' },
-  ];
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
-  const handleExportPaymentsCSV = () => {
-    const headers = ['Transaction ID', 'Order ID', 'Customer', 'Amount', 'Payment Method', 'Status', 'Date'];
-    const rows = transactions.map(t => [t.id, t.orderId, `"${t.customer}"`, `"${t.amount}"`, `"${t.method}"`, t.status, `"${t.date}"`]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+  // Payments are derived from the orders ledger rather than a separate
+  // hard-coded list, so the figures always reconcile with the store.
+  const loadOrders = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.orders.getAllOrdersAdmin();
+      setOrders(res.orders || []);
+    } catch (err) {
+      setError(err.message || 'Could not load payments.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadOrders();
+  }, [loadOrders]);
+
+  const totals = useMemo(() => {
+    const paid = orders.filter((o) => o.paymentStatus === 'Paid');
+    const collected = paid.reduce((sum, o) => sum + o.total, 0);
+    const refundable = orders
+      .filter((o) => o.status === 'Cancelled' && o.paymentStatus === 'Paid')
+      .reduce((sum, o) => sum + o.total, 0);
+    return {
+      collected,
+      transactions: paid.length,
+      averageOrder: paid.length ? Math.round(collected / paid.length) : 0,
+      refundable,
+    };
+  }, [orders]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter(
+      (o) =>
+        o.orderNumber.toLowerCase().includes(q) ||
+        (o.razorpay_payment_id || '').toLowerCase().includes(q) ||
+        (o.customerEmail || '').toLowerCase().includes(q)
+    );
+  }, [orders, search]);
+
+  const handleExportCSV = () => {
+    const headers = ['Order', 'Razorpay Payment ID', 'Customer', 'Amount', 'Payment Status', 'Order Status', 'Date'];
+    const rows = filtered.map((o) => [
+      o.orderNumber,
+      o.razorpay_payment_id || '',
+      `"${(o.customerEmail || o.shippingAddress?.email || 'Guest').replace(/"/g, '""')}"`,
+      o.total,
+      o.paymentStatus,
+      o.status,
+      o.createdAt ? new Date(o.createdAt).toISOString() : '',
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ORIVIDA_Payments_Ledger_${Date.now()}.csv`);
-    document.body.appendChild(link);
+    link.href = url;
+    link.download = `ORIVIDA_Payments_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
-    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
+  const cards = [
+    { label: 'Total collected', value: money(totals.collected) },
+    { label: 'Successful transactions', value: totals.transactions.toLocaleString('en-IN') },
+    { label: 'Average order value', value: money(totals.averageOrder) },
+    { label: 'Cancelled after payment', value: money(totals.refundable) },
+  ];
+
   return (
-    <div className="space-y-8 p-6 sm:p-8 bg-[#FAF9F6] min-h-screen">
-      {/* Title Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-200 pb-5">
-        <div>
-          <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">Financial Ledger & Gateways</span>
-          <h1 className="font-display font-extrabold text-3xl text-slate-900 mt-1">Payments & Transactions</h1>
+    <div className="min-h-screen bg-canvas p-6 sm:p-10 space-y-8">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-5 border-b border-line pb-6">
+        <div className="space-y-1.5">
+          <span className="type-eyebrow text-emerald-default">Financial ledger</span>
+          <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">Payments</h1>
+          <p className="text-sm text-ink-soft">Razorpay settlements reconciled against the orders table</p>
         </div>
 
         <button
-          onClick={handleExportPaymentsCSV}
-          className="bg-white hover:bg-gray-100 border border-gray-300 text-[#154734] px-6 py-3 rounded-full text-xs font-bold flex items-center gap-2 shadow-sm transition"
+          onClick={handleExportCSV}
+          disabled={filtered.length === 0}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md border border-line bg-white text-sm font-medium text-ink hover:border-emerald-default hover:text-emerald-default disabled:opacity-40 transition"
         >
-          <Download className="w-4 h-4" /> EXPORT PAYMENTS (CSV)
+          <Download className="w-4 h-4" /> Export CSV
         </button>
-      </div>
+      </header>
 
-      {/* Gateway Status Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>RAZORPAY GATEWAY</span>
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+      {loading ? (
+        <div className="surface-card rounded-lg p-16 flex flex-col items-center gap-3 text-ink-soft">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <p className="text-sm">Loading payments…</p>
+        </div>
+      ) : error ? (
+        <div className="surface-card rounded-lg p-16 text-center space-y-3">
+          <AlertCircle className="w-7 h-7 text-rose-500 mx-auto" />
+          <p className="text-sm text-ink font-medium">{error}</p>
+          <button onClick={loadOrders} className="text-sm text-emerald-default link-underline">Try again</button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {cards.map(({ label, value }) => (
+              <div key={label} className="surface-card rounded-lg p-6 space-y-2.5">
+                <span className="type-eyebrow text-ink-soft block">{label}</span>
+                <p className="type-price text-3xl text-ink">{value}</p>
+              </div>
+            ))}
           </div>
-          <p className="font-serif font-extrabold text-2xl text-[#154734]">₹11,40,200</p>
-          <p className="text-xs text-slate-500 font-medium">99.8% Gateway Health</p>
-        </div>
 
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>STRIPE VIP PAYOUTS</span>
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          <div className="relative max-w-md">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint" />
+            <input
+              type="search"
+              placeholder="Search order, payment ID or email"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={`${inputClass} pl-10`}
+            />
           </div>
-          <p className="font-serif font-extrabold text-2xl text-slate-900">₹3,42,700</p>
-          <p className="text-xs text-slate-500 font-medium">Next Payout: Tomorrow 09:00 AM</p>
-        </div>
 
-        <div className="p-6 rounded-3xl bg-white border border-gray-200 shadow-sm space-y-2">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-500">
-            <span>REFUNDS PROCESSED</span>
-            <Clock className="w-5 h-5 text-amber-600" />
+          <div className="surface-card rounded-lg overflow-hidden">
+            {filtered.length === 0 ? (
+              <div className="p-16 text-center space-y-2">
+                <CreditCard className="w-7 h-7 text-ink-faint mx-auto" />
+                <p className="type-heading text-lg text-ink">No transactions</p>
+                <p className="text-sm text-ink-soft">Completed payments will appear here.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-emerald-subtle border-b border-line">
+                    <tr className="text-[11px] uppercase tracking-[0.12em] text-ink-soft">
+                      <th className="py-3.5 px-6 font-semibold">Order</th>
+                      <th className="py-3.5 px-6 font-semibold">Payment reference</th>
+                      <th className="py-3.5 px-6 font-semibold">Customer</th>
+                      <th className="py-3.5 px-6 font-semibold text-right">Amount</th>
+                      <th className="py-3.5 px-6 font-semibold">Status</th>
+                      <th className="py-3.5 px-6 font-semibold">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line">
+                    {filtered.map((o) => (
+                      <tr key={o.id} className="hover:bg-emerald-subtle/50 transition">
+                        <td className="py-3.5 px-6 font-medium text-emerald-default tabular">{o.orderNumber}</td>
+                        <td className="py-3.5 px-6 text-ink-soft text-xs tabular">{o.razorpay_payment_id || '—'}</td>
+                        <td className="py-3.5 px-6 text-ink truncate max-w-[16rem]">
+                          {o.customerEmail || o.shippingAddress?.email || 'Guest checkout'}
+                        </td>
+                        <td className="py-3.5 px-6 text-right type-price text-ink">{money(o.total)}</td>
+                        <td className="py-3.5 px-6">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                            o.paymentStatus === 'Paid' ? 'bg-emerald-light text-emerald-deep'
+                            : o.paymentStatus === 'Failed' ? 'bg-rose-50 text-rose-700'
+                            : 'bg-amber-50 text-amber-800'
+                          }`}>
+                            {o.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-6 text-ink-soft">
+                          {o.createdAt
+                            ? new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-          <p className="font-serif font-extrabold text-2xl text-rose-700">₹8,990</p>
-          <p className="text-xs text-slate-500 font-medium">1 Return requested under 7-day guarantee</p>
-        </div>
-      </div>
-
-      {/* Transaction Log Table with Scroll Container & Sticky Header */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden space-y-4 p-6">
-        <h3 className="font-display font-bold text-base text-slate-900">Payment Gateway Audit Ledger</h3>
-
-        <div className="overflow-x-auto max-h-[520px] overflow-y-auto custom-scrollbar">
-          <table className="w-full text-left text-xs relative">
-            <thead className="bg-gray-50 border-b border-gray-200 text-slate-500 font-bold uppercase tracking-wider sticky top-0 z-10 shadow-sm">
-              <tr>
-                <th className="py-3.5 px-4 bg-gray-50">Transaction ID</th>
-                <th className="py-3.5 px-4 bg-gray-50">Order ID</th>
-                <th className="py-3.5 px-4 bg-gray-50">Customer</th>
-                <th className="py-3.5 px-4 bg-gray-50">Payment Method</th>
-                <th className="py-3.5 px-4 bg-gray-50">Amount</th>
-                <th className="py-3.5 px-4 bg-gray-50">Status</th>
-                <th className="py-3.5 px-4 bg-gray-50">Date & Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 font-medium">
-              {transactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/80 transition">
-                  <td className="py-3.5 px-4 font-mono font-bold text-slate-700">{tx.id}</td>
-                  <td className="py-3.5 px-4 font-bold text-[#154734]">{tx.orderId}</td>
-                  <td className="py-3.5 px-4 text-slate-800 font-bold">{tx.customer}</td>
-                  <td className="py-3.5 px-4 text-slate-600">{tx.method}</td>
-                  <td className="py-3.5 px-4 font-bold text-slate-900">{tx.amount}</td>
-                  <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                      tx.status === 'Success' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                    }`}>
-                      {tx.status}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-slate-400">{tx.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

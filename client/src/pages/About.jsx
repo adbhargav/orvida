@@ -1,84 +1,124 @@
 import React from 'react';
-import { Leaf, Award, ShieldCheck, Heart, Sparkles } from 'lucide-react';
-import { BRAND_STATS } from '../data/mockData';
+import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+
+const PILLARS = [
+  {
+    title: 'Eighteen months of care',
+    copy: 'Every variegated specimen is nurtured in our temperature-controlled Coorg nursery until its fenestrations mature and its aerial root architecture is established.',
+  },
+  {
+    title: 'Four thousand years of craft',
+    copy: 'Our arts collection is cast by Bastar bell metal families in Chhattisgarh using the lost-wax Dhokra method, and thrown by ceramic artists in Jaipur.',
+  },
+  {
+    title: 'Delivered as living things',
+    copy: 'White-glove, temperature-controlled transport with a seven-day health guarantee. If a plant does not settle, we replace it.',
+  },
+];
+
+const MILESTONES = [
+  { value: '15,000+', label: 'Botanicals hand-nurtured' },
+  { value: '120+', label: 'Artisan families supported' },
+  { value: '18 mo', label: 'Average nursery maturation' },
+];
 
 export default function About() {
   return (
-    <div className="pb-24 space-y-20 bg-[#FAF9F6]">
-      
-      {/* Hero Header */}
-      <section className="relative py-24 bg-[#F5F2EB] border-b border-gray-200 text-center overflow-hidden">
-        <div className="max-w-4xl mx-auto px-4 space-y-4 relative z-10">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#154734]">
-            Brand Manifesto
-          </span>
-          <h1 className="font-serif font-extrabold text-4xl sm:text-6xl text-slate-900">
-            "Our Passion, UR Luxury"
-          </h1>
-          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto leading-relaxed font-body">
-            ORIVIDA was founded with a singular conviction: that living plants and ancestral hand-cast arts belong together in modern sanctuary homes.
-          </p>
+    <div className="bg-canvas">
+      {/* Hero */}
+      <section className="relative bg-emerald-darker text-white">
+        <img
+          src="https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=2000&q=80"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-35"
+        />
+        <div className="relative max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-24 sm:py-32">
+          <div className="max-w-2xl space-y-5">
+            <span className="type-eyebrow text-gold-light block">Our story</span>
+            <h1 className="type-display text-4xl sm:text-[3.5rem]">
+              Our passion, <span className="italic">ur luxury</span>
+            </h1>
+            <p className="text-emerald-light/80 text-lg leading-relaxed">
+              ORIVIDA exists for people who treat living things as heirlooms — rare botanicals raised slowly, and
+              craft made by hands that learned it from the generation before.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* Main Story Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <div className="space-y-6 text-slate-900">
-          <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">Botanical Nursery Philosophy</span>
-          <h2 className="font-serif text-3xl font-bold text-slate-900">18-Month Nursery Acclimatization</h2>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-body">
-            Unlike commercial plant nurseries that mass-force greenhouse growth with synthetic stimulants, every ORIVIDA botanical specimen is hand-tended for 18 months in our organic nursery in Coorg.
-          </p>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-body">
-            We cultivate strong root systems, inspect leaf fenestrations under natural shade cloth, and pot each plant in custom perlite-coco aeration mixes before shipping.
-          </p>
-        </div>
-
-        <div className="relative aspect-[4/3] rounded-3xl overflow-hidden border border-gray-200 shadow-xl">
-          <img
-            src="https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=1200&q=80"
-            alt="ORIVIDA Organic Nursery"
-            className="w-full h-full object-cover"
-          />
+      {/* Pillars */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-20 sm:py-28">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16">
+          {PILLARS.map((pillar, idx) => (
+            <div key={pillar.title} className="space-y-4">
+              <span className="type-price text-2xl text-emerald-default">0{idx + 1}</span>
+              <h2 className="type-heading text-xl text-ink">{pillar.title}</h2>
+              <p className="text-ink-soft leading-relaxed">{pillar.copy}</p>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Heritage Craftsmanship Section */}
-      <section className="bg-white py-20 border-y border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
-          <div className="relative aspect-[4/3] rounded-3xl overflow-hidden border border-gray-200 shadow-xl order-2 lg:order-1">
+      {/* Craft */}
+      <section className="border-y border-line bg-white">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-20 sm:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className="aspect-[4/3] overflow-hidden bg-emerald-subtle order-2 lg:order-1">
             <img
               src="https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=1200&q=80"
-              alt="Bastar Bell Metal Craftsmanship"
+              alt="A Dhokra artisan finishing a bell metal casting"
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           </div>
 
-          <div className="space-y-6 text-slate-900 order-1 lg:order-2">
-            <span className="text-xs uppercase font-bold tracking-widest text-[#154734]">Preserving Heritage Arts</span>
-            <h2 className="font-serif text-3xl font-bold text-slate-900">4,000-Year Lost-Wax Metalwork</h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-body">
-              Our Arts & Décor collection directly empowers over 120 artisan families in Chhattisgarh and Rajasthan. Our Bastar bell metal (Dhokra) pieces are hand-sculpted thread-by-thread from bees' wax, encased in river clay, and cast in molten bell metal at 1100°C.
-            </p>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-body">
-              No two pieces are ever identical, guaranteeing that your ORIVIDA planter or sculpture is a unique heirloom investment.
-            </p>
+          <div className="space-y-6 order-1 lg:order-2">
+            <span className="type-eyebrow text-emerald-default block">The Bastar workshops</span>
+            <h2 className="type-display text-3xl sm:text-[2.5rem] text-ink">
+              Craft that predates the wheel it is cast on
+            </h2>
+            <div className="space-y-4 text-ink-soft leading-relaxed max-w-prose">
+              <p>
+                Dhokra casting has been practised in central India for roughly four thousand years. A beeswax model is
+                sheathed in clay, fired until the wax runs out, and the void filled with molten bell metal. The mould is
+                broken to release the piece, so no two are ever identical.
+              </p>
+              <p>
+                We commission directly from the families who hold this knowledge, and every piece ships with a signed
+                lineage certificate naming the artisan who made it.
+              </p>
+            </div>
           </div>
-
         </div>
       </section>
 
-      {/* Stats Ticker */}
-      <section className="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        {BRAND_STATS.map((stat, idx) => (
-          <div key={idx} className="p-6 rounded-2xl bg-white border border-gray-200 shadow-sm space-y-1">
-            <p className="font-display font-extrabold text-3xl text-[#154734]">{stat.value}</p>
-            <p className="text-xs uppercase font-semibold text-slate-600">{stat.label}</p>
-          </div>
-        ))}
+      {/* Milestones */}
+      <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-20 sm:py-24">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
+          {MILESTONES.map((item) => (
+            <div key={item.label} className="space-y-2">
+              <p className="type-price text-4xl text-emerald-default">{item.value}</p>
+              <p className="type-eyebrow text-ink-soft">{item.label}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
+      {/* CTA */}
+      <section className="bg-emerald-default text-white">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-20 text-center space-y-6">
+          <h2 className="type-display text-3xl sm:text-[2.5rem]">Begin your collection</h2>
+          <p className="text-emerald-light/80 max-w-xl mx-auto leading-relaxed">
+            Rare specimens, artisan planters and heritage craft — curated and delivered with care.
+          </p>
+          <Link
+            to="/category/plants"
+            className="inline-flex items-center gap-2 px-8 py-3.5 bg-white text-emerald-deep hover:bg-emerald-light text-[11px] uppercase tracking-[0.16em] transition-colors"
+          >
+            Explore the collection <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }
