@@ -32,6 +32,10 @@ import { handleRazorpayWebhook } from './controllers/paymentController.js';
 dotenv.config();
 
 const app = express();
+
+// Render (and most hosts) terminate TLS at a proxy; without this,
+// req.protocol reports http and generated asset URLs become mixed content.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // Security & Utility Middleware

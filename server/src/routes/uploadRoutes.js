@@ -44,15 +44,26 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 } // 10 MB limit
 });
 
+// Behind a proxy the request host is not the public one, so prefer an
+// explicitly configured asset base URL — unless that URL points at localhost
+// while the request came from a real domain (a dev value copied into a
+// production env), in which case the request origin is the truthful base.
+const resolveAssetBase = (req) => {
+  const configured = process.env.PUBLIC_ASSET_URL?.replace(/\/+$/, '');
+  const requestHost = req.get('host') || '';
+  const configuredIsLocal = configured && /localhost|127\.0\.0\.1/.test(configured);
+  const requestIsLocal = /localhost|127\.0\.0\.1/.test(requestHost);
+  if (configured && !(configuredIsLocal && !requestIsLocal)) return configured;
+  return `${req.protocol}://${requestHost}`;
+};
+
 // POST /api/upload - Single image upload
 router.post('/', upload.single('image'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Please upload an image file' });
     }
-    // Behind a proxy the request host is not the public one, so prefer an
-    // explicitly configured asset base URL when it is available.
-    const base = process.env.PUBLIC_ASSET_URL?.replace(/\/+$/, '') || `${req.protocol}://${req.get('host')}`;
+    const base = resolveAssetBase(req);
     const imageUrl = `${base}/uploads/${req.file.filename}`;
 
     res.json({
@@ -72,9 +83,7 @@ router.post('/multiple', upload.array('images', 10), (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'Please upload at least one image file' });
     }
-    // Behind a proxy the request host is not the public one, so prefer an
-    // explicitly configured asset base URL when it is available.
-    const base = process.env.PUBLIC_ASSET_URL?.replace(/\/+$/, '') || `${req.protocol}://${req.get('host')}`;
+    const base = resolveAssetBase(req);
 
     const urls = req.files.map(file => `${base}/uploads/${file.filename}`);
 
