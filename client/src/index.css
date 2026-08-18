@@ -80,6 +80,13 @@ img {
 }
 
 @layer utilities {
+  /* The gold logo's palest tones wash out against white, especially at
+     mobile sizes. Deepen and saturate it wherever it sits on a light
+     background. (Dark placements use brightness-0 invert instead.) */
+  .logo-on-light {
+    filter: brightness(0.82) saturate(1.45) contrast(1.15);
+  }
+
   /* ---------------------------------------------------------------------
      Editorial type
      Luxury headings: serif, normal weight, tight leading, slight negative

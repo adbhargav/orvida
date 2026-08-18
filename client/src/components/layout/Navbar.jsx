@@ -163,7 +163,7 @@ export default function Navbar() {
               <img
                 src={logoImg}
                 alt="ORIVIDA"
-                className="h-11 sm:h-14 w-auto object-contain"
+                className="h-11 sm:h-14 w-auto object-contain logo-on-light"
               />
             </Link>
 

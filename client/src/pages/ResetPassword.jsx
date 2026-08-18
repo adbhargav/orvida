@@ -82,7 +82,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-sm space-y-10">
         <div className="text-center space-y-5">
           <Link to="/" className="inline-block" aria-label="ORIVIDA home">
-            <img src={logoImg} alt="ORIVIDA" className="h-14 w-auto object-contain mx-auto" />
+            <img src={logoImg} alt="ORIVIDA" className="h-14 w-auto object-contain mx-auto logo-on-light" />
           </Link>
           <div className="space-y-1.5">
             <h1 className="type-display text-3xl text-ink">
