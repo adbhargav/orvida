@@ -12,7 +12,6 @@ const ANNOUNCEMENTS = [
   'Any 4 plants at ₹999 — limited botanical offer',
   '7-day plant health guarantee on every specimen',
 ];
-
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 export default function Navbar() {
