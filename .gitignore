@@ -9,7 +9,6 @@ lerna-debug.log*
 # Diagnostic data
 .gemini
 
-
 # Dependency directories
 node_modules/
 dist/
