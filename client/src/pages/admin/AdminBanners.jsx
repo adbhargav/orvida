@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, X, Loader2, AlertCircle, Upload, ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Upload, ImageIcon } from 'lucide-react';
 import { api } from '../../services/api';
 
 const inputClass =
@@ -17,6 +17,7 @@ export default function AdminBanners() {
   const [banner, setBanner] = useState(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -61,28 +62,56 @@ export default function AdminBanners() {
     }
   };
 
-  const handleCreate = async (event) => {
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(EMPTY);
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const openEdit = (item) => {
+    setEditingId(item.id);
+    setForm({
+      title: item.title || '',
+      subtitle: item.subtitle || '',
+      image: item.image || '',
+      link: item.link || '',
+      buttonText: item.button_text || item.buttonText || '',
+      displayOrder: item.display_order || item.displayOrder || 1,
+    });
+    setFormError('');
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async (event) => {
     event.preventDefault();
     setFormError('');
     if (!form.title.trim()) return setFormError('Give the banner a title.');
     if (!form.image) return setFormError('Upload a banner image.');
 
+    const payload = {
+      title: form.title.trim(),
+      subtitle: form.subtitle.trim(),
+      image: form.image,
+      link: form.link.trim(),
+      buttonText: form.buttonText.trim(),
+      displayOrder: Number(form.displayOrder) || 1,
+    };
+
     setSaving(true);
     try {
-      await api.banners.create({
-        title: form.title.trim(),
-        subtitle: form.subtitle.trim(),
-        image: form.image,
-        link: form.link.trim(),
-        buttonText: form.buttonText.trim(),
-        displayOrder: Number(form.displayOrder) || 1,
-      });
+      if (editingId) {
+        await api.banners.update(editingId, payload);
+      } else {
+        await api.banners.create(payload);
+      }
       setIsModalOpen(false);
+      setEditingId(null);
       setForm(EMPTY);
-      notify('success', 'Banner published to the homepage.');
+      notify('success', editingId ? 'Banner updated.' : 'Banner published to the homepage.');
       await loadBanners();
     } catch (err) {
-      setFormError(err.message || 'Could not create this banner.');
+      setFormError(err.message || `Could not ${editingId ? 'update' : 'create'} this banner.`);
     } finally {
       setSaving(false);
     }
@@ -109,7 +138,7 @@ export default function AdminBanners() {
         </div>
 
         <button
-          onClick={() => { setFormError(''); setIsModalOpen(true); }}
+          onClick={openCreate}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep transition"
         >
           <Plus className="w-4 h-4" /> New banner
@@ -157,13 +186,22 @@ export default function AdminBanners() {
                     Position {item.display_order} · links to {item.link || '—'}
                   </p>
                 </div>
-                <button
-                  onClick={() => handleDelete(item)}
-                  className="p-2 rounded-md text-ink-faint hover:bg-rose-600 hover:text-white transition shrink-0"
-                  aria-label={`Delete ${item.title}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => openEdit(item)}
+                    className="p-2 rounded-md text-ink-faint hover:bg-emerald-default hover:text-white transition"
+                    aria-label={`Edit ${item.title}`}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    className="p-2 rounded-md text-ink-faint hover:bg-rose-600 hover:text-white transition"
+                    aria-label={`Delete ${item.title}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -176,14 +214,14 @@ export default function AdminBanners() {
             <div className="flex justify-between items-start p-6 border-b border-line">
               <div className="space-y-1">
                 <span className="type-eyebrow text-emerald-default">Merchandising</span>
-                <h2 className="type-heading text-xl text-ink">New banner</h2>
+                <h2 className="type-heading text-xl text-ink">{editingId ? 'Edit banner' : 'New banner'}</h2>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 -mr-2 -mt-2 text-ink-faint hover:text-ink transition" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
+            <form onSubmit={handleSave} className="p-6 space-y-4">
               {formError && (
                 <div className="flex items-start gap-2.5 px-4 py-3 rounded-md bg-rose-50 border border-rose-200 text-sm text-rose-800">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -248,7 +286,7 @@ export default function AdminBanners() {
                 <button type="submit" disabled={saving || uploading}
                   className="px-6 py-2.5 mt-4 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep disabled:opacity-50 transition inline-flex items-center gap-2">
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Publish banner
+                  {editingId ? 'Save changes' : 'Publish banner'}
                 </button>
               </div>
             </form>

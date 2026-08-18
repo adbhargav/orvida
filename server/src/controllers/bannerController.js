@@ -26,6 +26,29 @@ export const createBanner = async (req, res, next) => {
   }
 };
 
+export const updateBanner = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, subtitle, image, link, buttonText, displayOrder } = req.body;
+
+    const result = await query(
+      `UPDATE banners
+       SET title = $1, subtitle = $2, image = $3, link = $4, button_text = $5, display_order = $6
+       WHERE id = $7
+       RETURNING *`,
+      [title, subtitle, image, link, buttonText || 'DISCOVER COLLECTION', displayOrder || 1, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Banner not found' });
+    }
+
+    res.json({ success: true, banner: result.rows[0] });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteBanner = async (req, res, next) => {
   try {
     const { id } = req.params;

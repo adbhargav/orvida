@@ -337,6 +337,7 @@ export const api = {
   banners: {
     getAll: () => request('/banners'),
     create: (data) => request('/banners/admin', { method: 'POST', body: data, auth: true }),
+    update: (id, data) => request(`/banners/admin/${id}`, { method: 'PUT', body: data, auth: true }),
     remove: (id) => request(`/banners/admin/${id}`, { method: 'DELETE', auth: true }),
   },
 
