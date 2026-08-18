@@ -20,6 +20,8 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+# The production env holds only the public API URL — safe and useful to commit.
+!client/.env.production
 *firebase-adminsdk*.json
 serviceAccountKey.json
 
