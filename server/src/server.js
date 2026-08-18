@@ -49,7 +49,13 @@ const DEV_ORIGINS = [
   'http://127.0.0.1:3000'
 ];
 
+// The deployed storefront. CLIENT_URL / ADDITIONAL_ORIGINS can extend this
+// list, but the production frontend must never depend on a dashboard env var
+// being remembered.
+const PROD_ORIGINS = ['https://orvida.vercel.app'];
+
 const allowedOrigins = [
+  ...PROD_ORIGINS,
   ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((o) => o.trim()) : []),
   ...(process.env.ADDITIONAL_ORIGINS ? process.env.ADDITIONAL_ORIGINS.split(',').map((o) => o.trim()) : []),
   ...(isProduction ? [] : DEV_ORIGINS)
