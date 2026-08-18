@@ -24,6 +24,16 @@ try {
     });
     firebaseInitialized = true;
     console.log(`Firebase Admin SDK initialized with Service Account file: ${path.basename(serviceAccountFilePath)}`);
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    // Hosts like Render take a single-line env var far more gracefully than a
+    // JSON blob with embedded newlines: base64-encode the service account file
+    // and paste it as FIREBASE_SERVICE_ACCOUNT_BASE64.
+    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64.trim(), 'base64').toString('utf-8');
+    admin.initializeApp({
+      credential: admin.credential.cert(JSON.parse(decoded)),
+    });
+    firebaseInitialized = true;
+    console.log('Firebase Admin SDK initialized with base64 service account from environment.');
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
     admin.initializeApp({
