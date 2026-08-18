@@ -7,7 +7,6 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { COMPANY } from '../../config/company';
 import logoImg from '../../assets/logo.png';
-
 const ANNOUNCEMENTS = [
   'Complimentary shipping on orders above ₹1,999',
   'Any 4 plants at ₹999 — limited botanical offer',
