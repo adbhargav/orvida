@@ -123,7 +123,7 @@ export default function ProductCard({ product, onQuickView }) {
         {product.subcategoryName && (
           // Tighter tracking on phones so the label fits a two-column card
           // instead of being cut off mid-word.
-          <span className="type-eyebrow text-ink-faint mb-1.5 truncate tracking-[0.1em] sm:tracking-[0.18em]">
+          <span className="type-eyebrow text-ink-soft mb-1.5 truncate tracking-[0.1em] sm:tracking-[0.18em]">
             {product.subcategoryName}
           </span>
         )}

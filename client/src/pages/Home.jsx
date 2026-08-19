@@ -188,7 +188,7 @@ export default function Home() {
           {ASSURANCES.map(({ icon: Icon, label }) => (
             <div key={label} className="flex items-center justify-center gap-2.5 py-5 px-3 text-center">
               <Icon className="w-4 h-4 text-emerald-default shrink-0" />
-              <span className="text-xs sm:text-sm text-ink-soft">{label}</span>
+              <span className="text-xs sm:text-sm font-medium text-ink">{label}</span>
             </div>
           ))}
         </div>
@@ -209,7 +209,7 @@ export default function Home() {
                     className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-[900ms] ease-out"
                   />
                 </div>
-                <span className="text-xs sm:text-sm text-ink-soft group-hover:text-emerald-default transition-colors">
+                <span className="text-xs sm:text-sm font-medium text-ink group-hover:text-emerald-default transition-colors">
                   {cat.name}
                 </span>
               </Link>
@@ -239,7 +239,7 @@ export default function Home() {
               <span className="italic text-emerald-default">{brandStory.headingAccent}</span>
             </h2>
 
-            <div className="space-y-4 text-ink-soft leading-relaxed max-w-prose">
+            <div className="space-y-4 text-ink leading-relaxed max-w-prose">
               <p>{brandStory.paragraph1}</p>
               {brandStory.paragraph2 && <p>{brandStory.paragraph2}</p>}
             </div>
@@ -329,7 +329,7 @@ export default function Home() {
                 {review.title && (
                   <blockquote className="type-heading text-lg text-ink leading-snug">{review.title}</blockquote>
                 )}
-                <p className="text-sm text-ink-soft leading-relaxed">{review.comment}</p>
+                <p className="text-sm text-ink leading-relaxed">{review.comment}</p>
 
                 <figcaption className="pt-3 border-t border-line space-y-0.5">
                   <p className="text-sm text-ink">{review.user_name}</p>
