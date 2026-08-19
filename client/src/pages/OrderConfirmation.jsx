@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { Check, Printer, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Check, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
@@ -139,14 +139,8 @@ export default function OrderConfirmation() {
 
         {/* Summary */}
         <section className="surface-card">
-          <div className="px-6 sm:px-8 py-5 border-b border-line flex justify-between items-center">
+          <div className="px-6 sm:px-8 py-5 border-b border-line">
             <h2 className="type-heading text-lg text-ink">Order summary</h2>
-            <button
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 text-sm text-ink-soft hover:text-emerald-default transition-colors print:hidden"
-            >
-              <Printer className="w-3.5 h-3.5" /> Print
-            </button>
           </div>
 
           <ul className="divide-y divide-line">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Package, MapPin, LogOut, Plus, X, Truck, ArrowRight, Loader2, AlertCircle, Check, FileText,
+  Package, MapPin, LogOut, Plus, X, Truck, ArrowRight, Loader2, AlertCircle, Check,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -129,14 +129,6 @@ export default function Account() {
       notify('success', 'Address removed.');
     } catch (err) {
       notify('error', err.message || 'Could not remove this address.');
-    }
-  };
-
-  const handleOpenDocument = async (order, kind) => {
-    try {
-      await api.orders.openDocument(order.orderNumber, kind);
-    } catch (err) {
-      notify('error', err.message || `Could not open the ${kind}.`);
     }
   };
 
@@ -368,12 +360,6 @@ export default function Account() {
                       >
                         View receipt
                       </Link>
-                      <button
-                        onClick={() => handleOpenDocument(order, 'invoice')}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-line text-ink hover:border-ink text-[11px] uppercase tracking-[0.14em] transition-colors"
-                      >
-                        <FileText className="w-3.5 h-3.5" /> Invoice
-                      </button>
                       {order.refundedAmount > 0 && (
                         <span className="inline-flex items-center px-3 py-2.5 text-sm text-emerald-default">
                           {formatPrice(order.refundedAmount)} refunded
