@@ -154,20 +154,23 @@ export const deleteSubcategory = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const inUse = await query('SELECT COUNT(*)::int AS count FROM products WHERE subcategory_id = $1', [id]);
-    if (inUse.rows[0].count > 0) {
-      return res.status(409).json({
-        success: false,
-        message: `This subcategory still has ${inUse.rows[0].count} product(s). Reassign or remove them first.`,
-      });
-    }
+    // Products are detached, not deleted — they stay in the parent category.
+    const detached = await query(
+      'UPDATE products SET subcategory_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE subcategory_id = $1 RETURNING id',
+      [id]
+    );
 
     const result = await query('DELETE FROM subcategories WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Subcategory not found' });
     }
 
-    res.json({ success: true, message: 'Subcategory deleted successfully' });
+    res.json({
+      success: true,
+      message: detached.rowCount > 0
+        ? `Subcategory deleted. ${detached.rowCount} product(s) remain in the parent category.`
+        : 'Subcategory deleted successfully',
+    });
   } catch (error) {
     next(error);
   }

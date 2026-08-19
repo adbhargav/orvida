@@ -189,10 +189,12 @@ export default function AdminCategories() {
   };
 
   const handleSubDelete = async (sub) => {
-    if (!window.confirm(`Delete the “${sub.name}” subcategory?`)) return;
+    if (!window.confirm(
+      `Delete the “${sub.name}” subcategory? Its products stay in the parent category.`
+    )) return;
     try {
-      await api.categories.removeSubcategory(sub.id);
-      notify('success', `${sub.name} deleted.`);
+      const res = await api.categories.removeSubcategory(sub.id);
+      notify('success', res.message || `${sub.name} deleted.`);
       await loadCategories();
     } catch (err) {
       notify('error', err.message || 'Could not delete this subcategory.');
