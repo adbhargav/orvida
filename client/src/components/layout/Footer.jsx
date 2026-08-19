@@ -41,6 +41,13 @@ const LINK_GROUPS = [
   },
 ];
 
+const POLICY_LINKS = [
+  { label: 'Privacy Policy', to: '/policies/privacy-policy' },
+  { label: 'Terms & Conditions', to: '/policies/terms-and-conditions' },
+  { label: 'Shipping Policy', to: '/policies/shipping-policy' },
+  { label: 'Refund & Cancellation', to: '/policies/refund-policy' },
+];
+
 export default function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
@@ -160,9 +167,18 @@ export default function Footer() {
 
       {/* Legal */}
       <div className="border-t border-emerald-deep">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-emerald-light/50">
-          <p>© {new Date().getFullYear()} {COMPANY.name}. {COMPANY.tagline}.</p>
-          <p>Secure payments by Razorpay · UPI, cards, netbanking and wallets</p>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-6 space-y-4 text-xs text-emerald-light/50">
+          <nav aria-label="Policies" className="flex flex-wrap justify-center sm:justify-start items-center gap-x-6 gap-y-2">
+            {POLICY_LINKS.map((link) => (
+              <Link key={link.to} to={link.to} className="hover:text-white transition-colors">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
+            <p>© {new Date().getFullYear()} {COMPANY.name}. {COMPANY.tagline}.</p>
+            <p>Secure payments by Razorpay · UPI, cards, netbanking and wallets</p>
+          </div>
         </div>
       </div>
     </footer>

@@ -6,6 +6,7 @@ import {
   ABOUT_PAGE_DEFAULTS,
   mergeContent,
 } from '../../config/siteContentDefaults';
+import { POLICIES } from '../../config/policyDefaults';
 
 const inputClass =
   'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
@@ -100,6 +101,7 @@ export default function AdminSiteContent() {
 
   const [brandStory, setBrandStory] = useState(HOME_BRAND_STORY_DEFAULTS);
   const [about, setAbout] = useState(ABOUT_PAGE_DEFAULTS);
+  const [policies, setPolicies] = useState(POLICIES);
   const [savingKey, setSavingKey] = useState(null);
   const [savedKey, setSavedKey] = useState(null);
 
@@ -112,9 +114,18 @@ export default function AdminSiteContent() {
     setLoading(true);
     setLoadError('');
     try {
-      const res = await api.content.get('home_brand_story', 'about_page');
+      const policyKeys = Object.keys(POLICIES).map((slug) => `policy_${slug}`);
+      const res = await api.content.get('home_brand_story', 'about_page', ...policyKeys);
       setBrandStory(mergeContent(HOME_BRAND_STORY_DEFAULTS, res.content?.home_brand_story));
       setAbout(mergeContent(ABOUT_PAGE_DEFAULTS, res.content?.about_page));
+      setPolicies(
+        Object.fromEntries(
+          Object.entries(POLICIES).map(([slug, def]) => [
+            slug,
+            mergeContent(def, res.content?.[`policy_${slug}`]),
+          ])
+        )
+      );
     } catch (err) {
       setLoadError(err.message || 'Could not load site content.');
     } finally {
@@ -313,6 +324,32 @@ export default function AdminSiteContent() {
           </div>
         </div>
       </SectionCard>
+
+      {/* Policies */}
+      {Object.entries(policies).map(([slug, policy]) => (
+        <SectionCard
+          key={slug}
+          title={policy.title}
+          description={`Shown at /policies/${slug} — linked from the footer. Lines starting “## ” become headings, “- ” become bullet points.`}
+          onSave={() => save(`policy_${slug}`, policy)}
+          saving={savingKey === `policy_${slug}`}
+          savedAt={savedKey === `policy_${slug}`}
+        >
+          <div className="space-y-4">
+            <Field label="Page title" value={policy.title}
+              onChange={(v) => setPolicies({ ...policies, [slug]: { ...policy, title: v } })} />
+            <div className="space-y-1.5">
+              <label className={labelClass}>Content</label>
+              <textarea
+                rows={14}
+                value={policy.body}
+                onChange={(e) => setPolicies({ ...policies, [slug]: { ...policy, body: e.target.value } })}
+                className={`${inputClass} resize-y font-mono text-[13px] leading-relaxed`}
+              />
+            </div>
+          </div>
+        </SectionCard>
+      ))}
     </div>
   );
 }

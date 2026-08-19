@@ -25,6 +25,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const About = lazy(() => import('./pages/About'));
 const GiftingConcierge = lazy(() => import('./pages/GiftingConcierge'));
+const PolicyPage = lazy(() => import('./pages/PolicyPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function ScrollToTop() {
@@ -70,6 +71,7 @@ function AppContent() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/gifting-concierge" element={<GiftingConcierge />} />
             <Route path="/about" element={<About />} />
+            <Route path="/policies/:slug" element={<PolicyPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
