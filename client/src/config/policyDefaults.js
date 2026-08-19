@@ -9,7 +9,7 @@
 export const POLICIES = {
   'privacy-policy': {
     title: 'Privacy Policy',
-    body: `ORIVIDA ("we", "our") respects your privacy. This policy explains what information we collect when you use orvida.com and our services, and how we use and protect it.
+    body: `ORIVIDA ("we", "our") respects your privacy. This policy explains what information we collect when you use orvida.in and our services, and how we use and protect it.
 
 ## Information we collect
 
