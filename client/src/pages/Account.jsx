@@ -338,7 +338,28 @@ export default function Account() {
                       </ul>
                     )}
 
-                    {order.trackingNumber && (
+                    {order.delhiveryAwb ? (
+                      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-emerald-subtle text-sm">
+                        <Truck className="w-4 h-4 text-emerald-default shrink-0" />
+                        <span className="text-ink-soft">
+                          Delhivery AWB:{' '}
+                          <span className="text-ink tabular">{order.delhiveryAwb}</span>
+                          {order.deliveryStatus && (
+                            <span className="text-ink-faint"> · {order.deliveryStatus}</span>
+                          )}
+                        </span>
+                        {order.trackingUrl && (
+                          <a
+                            href={order.trackingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-default link-underline ml-auto"
+                          >
+                            Track parcel
+                          </a>
+                        )}
+                      </div>
+                    ) : order.trackingNumber ? (
                       <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-emerald-subtle text-sm">
                         <Truck className="w-4 h-4 text-emerald-default shrink-0" />
                         <span className="text-ink-soft">
@@ -354,7 +375,7 @@ export default function Account() {
                           Track parcel
                         </a>
                       </div>
-                    )}
+                    ) : null}
 
                     <div className="flex flex-wrap gap-3 pt-4 border-t border-line">
                       <Link
