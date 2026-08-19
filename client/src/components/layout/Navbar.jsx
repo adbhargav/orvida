@@ -142,7 +142,7 @@ export default function Navbar() {
   return (
     <>
       {/* Announcement — a single rotating line rather than a scrolling ticker */}
-      <div className="bg-emerald-default text-white">
+      <div className="bg-white text-emerald-deep border-b border-line">
         <div className="max-w-[1600px] mx-auto px-4 h-9 flex items-center justify-center overflow-hidden">
           <p key={announcementIndex} className="text-xs tracking-[0.08em] text-center animate-fadeIn">
             {announcements[announcementIndex] || announcements[0]}
@@ -150,14 +150,14 @@ export default function Navbar() {
         </div>
       </div>
 
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-line">
+      <header className="sticky top-0 z-40 bg-emerald-default border-b border-emerald-deep">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
           <div className="h-[72px] sm:h-20 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
             {/* Left */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="lg:hidden p-2 -ml-2 text-ink hover:text-emerald-default transition-colors"
+                className="lg:hidden p-2 -ml-2 text-white/90 hover:text-gold-mid transition-colors"
                 aria-label="Open menu"
               >
                 <Menu className="w-5 h-5" />
@@ -165,29 +165,27 @@ export default function Navbar() {
 
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="hidden lg:flex items-center gap-2.5 text-sm text-ink-soft hover:text-emerald-default transition-colors"
+                className="hidden lg:flex items-center gap-2.5 text-sm text-white/80 hover:text-white transition-colors"
               >
                 <Search className="w-4 h-4" />
                 <span>Search</span>
               </button>
             </div>
 
-            {/* Logo — on its brand-green ground, navbar only */}
+            {/* Logo — the whole bar is its brand-green ground */}
             <Link to="/" className="justify-self-center" aria-label="ORIVIDA home">
-              <span className="inline-flex items-center bg-emerald-default rounded-md px-4 py-1.5">
-                <img
-                  src={logoImg}
-                  alt="ORIVIDA"
-                  className="h-9 sm:h-12 w-auto object-contain"
-                />
-              </span>
+              <img
+                src={logoImg}
+                alt="ORIVIDA"
+                className="h-14 sm:h-[68px] w-auto object-contain"
+              />
             </Link>
 
             {/* Right */}
             <div className="flex items-center justify-end gap-1 sm:gap-2">
               <button
                 onClick={() => setIsSearchOpen(true)}
-                className="lg:hidden p-2 text-ink hover:text-emerald-default transition-colors"
+                className="lg:hidden p-2 text-white/90 hover:text-gold-mid transition-colors"
                 aria-label="Search"
               >
                 <Search className="w-5 h-5" />
@@ -195,16 +193,16 @@ export default function Navbar() {
 
               <button
                 onClick={() => navigate(user ? '/account' : '/login')}
-                className="flex items-center gap-2 p-2 text-ink hover:text-emerald-default transition-colors"
+                className="flex items-center gap-2 p-2 text-white/90 hover:text-gold-mid transition-colors"
                 aria-label={user ? 'Your account' : 'Sign in'}
               >
                 {user?.photoURL && !photoFailed ? (
                   <img
                     src={user.photoURL} alt="" onError={() => setPhotoFailed(true)}
-                    className="w-6 h-6 rounded-full object-cover border border-line"
+                    className="w-6 h-6 rounded-full object-cover border border-white/30"
                   />
                 ) : user ? (
-                  <span className="w-6 h-6 rounded-full bg-emerald-default text-white flex items-center justify-center text-[11px] font-medium">
+                  <span className="w-6 h-6 rounded-full bg-white/15 border border-white/25 text-white flex items-center justify-center text-[11px] font-medium">
                     {avatarLetter}
                   </span>
                 ) : (
@@ -215,12 +213,12 @@ export default function Navbar() {
 
               <Link
                 to="/wishlist"
-                className="relative p-2 text-ink hover:text-emerald-default transition-colors"
+                className="relative p-2 text-white/90 hover:text-gold-mid transition-colors"
                 aria-label={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ''}`}
               >
                 <Heart className="w-5 h-5" />
                 {wishlistCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 bg-emerald-default text-white text-[10px] rounded-full flex items-center justify-center tabular">
+                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 px-1 bg-gold-mid text-emerald-deep text-[10px] rounded-full flex items-center justify-center tabular">
                     {wishlistCount}
                   </span>
                 )}
@@ -228,13 +226,13 @@ export default function Navbar() {
 
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative flex items-center gap-2 px-3 sm:px-4 py-2 text-ink hover:text-emerald-default transition-colors"
+                className="relative flex items-center gap-2 px-3 sm:px-4 py-2 text-white/90 hover:text-gold-mid transition-colors"
                 aria-label={`Cart${totalItemsCount ? `, ${totalItemsCount} items` : ''}`}
               >
                 <ShoppingBag className="w-5 h-5" />
                 <span className="hidden sm:inline text-sm">Cart</span>
                 {totalItemsCount > 0 && (
-                  <span className="min-w-[18px] h-[18px] px-1 bg-emerald-default text-white text-[10px] rounded-full flex items-center justify-center tabular">
+                  <span className="min-w-[18px] h-[18px] px-1 bg-gold-mid text-emerald-deep text-[10px] rounded-full flex items-center justify-center tabular">
                     {totalItemsCount}
                   </span>
                 )}
@@ -244,7 +242,7 @@ export default function Navbar() {
         </div>
 
         {/* Category navigation */}
-        <nav className="hidden lg:block border-t border-line" onMouseLeave={() => setActiveCategory(null)}>
+        <nav className="hidden lg:block border-t border-white/10" onMouseLeave={() => setActiveCategory(null)}>
           {/* min-h reserves the row so the header does not jump when the
               categories resolve. */}
           <div className="max-w-[1600px] mx-auto px-12 flex justify-center items-center gap-10 min-h-[46px]">
@@ -253,7 +251,7 @@ export default function Navbar() {
                 <Link
                   to={`/category/${cat.slug}`}
                   className={`flex items-center gap-1.5 py-3.5 text-[11px] uppercase tracking-[0.16em] transition-colors ${
-                    activeCategory === cat.id ? 'text-emerald-default' : 'text-ink-soft hover:text-ink'
+                    activeCategory === cat.id ? 'text-gold-light' : 'text-white/75 hover:text-white'
                   }`}
                 >
                   {cat.name}
@@ -268,13 +266,13 @@ export default function Navbar() {
 
             <Link
               to="/gifting-concierge"
-              className="py-3.5 text-[11px] uppercase tracking-[0.16em] text-ink-soft hover:text-ink transition-colors"
+              className="py-3.5 text-[11px] uppercase tracking-[0.16em] text-white/75 hover:text-white transition-colors"
             >
               Bespoke Gifting
             </Link>
             <Link
               to="/about"
-              className="py-3.5 text-[11px] uppercase tracking-[0.16em] text-ink-soft hover:text-ink transition-colors"
+              className="py-3.5 text-[11px] uppercase tracking-[0.16em] text-white/75 hover:text-white transition-colors"
             >
               Our Story
             </Link>
