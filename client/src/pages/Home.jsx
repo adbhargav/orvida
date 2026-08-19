@@ -64,9 +64,10 @@ export default function Home() {
       if (catRes.status === 'fulfilled') {
         // The collection rail is built from real subcategories and their own
         // imagery, rather than a hard-coded list of stock photographs.
+        // No image filter: a collection with no artwork still shows (with a
+        // placeholder) rather than silently vanishing from the rail.
         const rail = (catRes.value.categories || []).flatMap((cat) =>
           (cat.subcategories || [])
-            .filter((sub) => sub.image)
             .map((sub) => ({
               key: `${cat.slug}-${sub.slug}`,
               name: sub.name,
@@ -219,13 +220,19 @@ export default function Home() {
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4 sm:gap-6">
             {collections.map((cat) => (
               <Link key={cat.key} to={cat.link} className="group text-center">
-                <div className="aspect-square rounded-full overflow-hidden border border-line group-hover:border-emerald-default transition-colors duration-300 mb-3">
-                  <img
-                    src={cat.image}
-                    alt=""
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-[900ms] ease-out"
-                  />
+                <div className="aspect-square rounded-full overflow-hidden border border-line group-hover:border-emerald-default transition-colors duration-300 mb-3 bg-emerald-subtle">
+                  {cat.image ? (
+                    <img
+                      src={cat.image}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-[900ms] ease-out"
+                    />
+                  ) : (
+                    <span className="w-full h-full flex items-center justify-center type-heading text-2xl text-emerald-default/50">
+                      {cat.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
                 <span className="text-xs sm:text-sm font-medium text-ink group-hover:text-emerald-default transition-colors">
                   {cat.name}
