@@ -527,26 +527,6 @@ export const updateOrderStatus = async (req, res, next) => {
   }
 };
 
-export const updateOrderTracking = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { trackingNumber, courierName = 'India Post' } = req.body;
-
-    const result = await query(
-      'UPDATE orders SET tracking_number = $1, courier_name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
-      [trackingNumber, courierName, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Order not found' });
-    }
-
-    res.json({ success: true, message: 'Tracking number updated successfully', order: result.rows[0] });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const cancelUserOrder = async (req, res, next) => {
   try {
     const { id } = req.params;

@@ -6,7 +6,6 @@ import {
   getOrderById,
   getAllOrdersAdmin,
   updateOrderStatus,
-  updateOrderTracking,
   cancelUserOrder,
   getOrderInvoice,
   getOrderLabel
@@ -32,6 +31,5 @@ router.get('/:identifier/label', authenticateToken, getOrderLabel);
 // Admin ledger
 router.get('/admin/all', authenticateToken, requireAdmin, getAllOrdersAdmin);
 router.patch('/admin/:id/status', authenticateToken, requireAdmin, updateOrderStatus);
-router.patch('/admin/:id/tracking', authenticateToken, requireAdmin, updateOrderTracking);
 
 export default router;

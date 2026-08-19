@@ -288,12 +288,6 @@ export const api = {
       request(`/shipping/admin/orders/${orderId}/create`, { method: 'POST', auth: true }),
     refreshShipmentTracking: (orderId) =>
       request(`/shipping/admin/orders/${orderId}/refresh`, { method: 'POST', auth: true }),
-    updateTracking: (orderId, trackingNumber, courierName = 'India Post') =>
-      request(`/orders/admin/${orderId}/tracking`, {
-        method: 'PATCH',
-        body: { trackingNumber, courierName },
-        auth: true,
-      }),
 
     /**
      * Invoice and label are server-rendered HTML behind an auth check, so they

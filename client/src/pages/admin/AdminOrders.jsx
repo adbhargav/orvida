@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Search, Loader2, AlertCircle, Download, Truck, Package, ChevronDown, X,
+  Search, Loader2, AlertCircle, Download, Package, ChevronDown, X,
   FileText, Tag, IndianRupee, RefreshCw, ExternalLink, Send,
 } from 'lucide-react';
 import { api } from '../../services/api';
@@ -31,7 +31,6 @@ export default function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState(null);
-  const [trackingDrafts, setTrackingDrafts] = useState({});
   const [refundOrder, setRefundOrder] = useState(null);
   const [refundForm, setRefundForm] = useState({ amount: '', reason: '' });
   const [refundError, setRefundError] = useState('');
@@ -68,23 +67,6 @@ export default function AdminOrders() {
       notify('success', `${order.orderNumber} marked as ${nextStatus}. The customer has been emailed.`);
     } catch (err) {
       notify('error', err.message || 'Could not update this order.');
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const handleSaveTracking = async (order) => {
-    const trackingNumber = (trackingDrafts[order.id] ?? '').trim();
-    if (!trackingNumber) return;
-
-    setBusyId(order.id);
-    try {
-      await api.orders.updateTracking(order.id, trackingNumber);
-      setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, trackingNumber } : o)));
-      setTrackingDrafts((prev) => ({ ...prev, [order.id]: undefined }));
-      notify('success', `Tracking saved for ${order.orderNumber}.`);
-    } catch (err) {
-      notify('error', err.message || 'Could not save the tracking number.');
     } finally {
       setBusyId(null);
     }
@@ -289,7 +271,6 @@ export default function AdminOrders() {
             const customerName = order.customerName || order.shippingAddress?.fullName || 'Guest checkout';
             const customerEmail = order.customerEmail || order.shippingAddress?.email || '';
             const isBusy = busyId === order.id;
-            const draft = trackingDrafts[order.id];
 
             return (
               <article key={order.id} className="surface-card rounded-lg p-5 sm:p-6 space-y-5">
@@ -385,54 +366,18 @@ export default function AdminOrders() {
                   </div>
                 </div>
 
-                {/* Shipping address + tracking */}
-                <div className="pt-4 border-t border-line grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1">
-                    <span className="type-eyebrow text-ink-soft">Ship to</span>
-                    <address className="text-sm text-ink not-italic leading-relaxed">
-                      {order.shippingAddress?.address}
-                      {order.shippingAddress?.city && <>, {order.shippingAddress.city}</>}
-                      {order.shippingAddress?.state && <>, {order.shippingAddress.state}</>}
-                      {order.shippingAddress?.pincode && <> — {order.shippingAddress.pincode}</>}
-                      {order.shippingAddress?.phone && (
-                        <span className="block text-ink-soft tabular">{order.shippingAddress.phone}</span>
-                      )}
-                    </address>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="type-eyebrow text-ink-soft flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5" /> Tracking
-                    </span>
-                    {order.trackingNumber && draft === undefined ? (
-                      <div className="flex items-center gap-3">
-                        <p className="text-sm text-ink tabular">{order.trackingNumber}</p>
-                        <button
-                          onClick={() => setTrackingDrafts((p) => ({ ...p, [order.id]: order.trackingNumber }))}
-                          className="text-sm text-emerald-default link-underline"
-                        >
-                          Change
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="India Post AWB number"
-                          value={draft ?? ''}
-                          onChange={(e) => setTrackingDrafts((p) => ({ ...p, [order.id]: e.target.value }))}
-                          className={inputClass}
-                        />
-                        <button
-                          onClick={() => handleSaveTracking(order)}
-                          disabled={isBusy || !(draft ?? '').trim()}
-                          className="px-4 py-2.5 rounded-md bg-emerald-default text-white text-sm font-medium hover:bg-emerald-deep disabled:opacity-40 transition shrink-0"
-                        >
-                          Save
-                        </button>
-                      </div>
+                {/* Shipping address */}
+                <div className="pt-4 border-t border-line space-y-1">
+                  <span className="type-eyebrow text-ink-soft">Ship to</span>
+                  <address className="text-sm text-ink not-italic leading-relaxed">
+                    {order.shippingAddress?.address}
+                    {order.shippingAddress?.city && <>, {order.shippingAddress.city}</>}
+                    {order.shippingAddress?.state && <>, {order.shippingAddress.state}</>}
+                    {order.shippingAddress?.pincode && <> — {order.shippingAddress.pincode}</>}
+                    {order.shippingAddress?.phone && (
+                      <span className="block text-ink-soft tabular">{order.shippingAddress.phone}</span>
                     )}
-                  </div>
+                  </address>
                 </div>
 
                 {/* Delhivery shipment */}

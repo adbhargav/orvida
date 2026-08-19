@@ -223,11 +223,6 @@ export default function OrderConfirmation() {
                 )}
               </>
             )}
-            {order.trackingNumber && (
-              <p className="text-sm text-ink-soft pt-2">
-                Tracking: <span className="text-ink tabular">{order.trackingNumber}</span>
-              </p>
-            )}
           </div>
         </section>
 

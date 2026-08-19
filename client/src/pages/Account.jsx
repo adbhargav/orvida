@@ -338,7 +338,7 @@ export default function Account() {
                       </ul>
                     )}
 
-                    {order.delhiveryAwb ? (
+                    {order.delhiveryAwb && (
                       <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-emerald-subtle text-sm">
                         <Truck className="w-4 h-4 text-emerald-default shrink-0" />
                         <span className="text-ink-soft">
@@ -359,23 +359,7 @@ export default function Account() {
                           </a>
                         )}
                       </div>
-                    ) : order.trackingNumber ? (
-                      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-emerald-subtle text-sm">
-                        <Truck className="w-4 h-4 text-emerald-default shrink-0" />
-                        <span className="text-ink-soft">
-                          {order.courierName || 'India Post'} tracking:{' '}
-                          <span className="text-ink tabular">{order.trackingNumber}</span>
-                        </span>
-                        <a
-                          href="https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-emerald-default link-underline ml-auto"
-                        >
-                          Track parcel
-                        </a>
-                      </div>
-                    ) : null}
+                    )}
 
                     <div className="flex flex-wrap gap-3 pt-4 border-t border-line">
                       <Link
