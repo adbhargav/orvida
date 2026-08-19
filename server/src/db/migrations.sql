@@ -119,3 +119,7 @@ CREATE TABLE IF NOT EXISTS site_content (
   content JSONB NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 11. Optional portrait/square banner artwork for phones. Without it the
+--     storefront letterboxes the wide image instead of cropping it.
+ALTER TABLE banners ADD COLUMN IF NOT EXISTS mobile_image TEXT;

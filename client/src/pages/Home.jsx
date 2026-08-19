@@ -84,6 +84,7 @@ export default function Home() {
           (bannerRes.value.banners || []).map((b) => ({
             id: b.id,
             image: b.image,
+            mobileImage: b.mobile_image || b.mobileImage || '',
             link: b.link || '/category/plants',
             title: b.title,
           }))
@@ -126,7 +127,14 @@ export default function Home() {
           banner arrives, which removes the need for a loading placeholder. */}
       {slides.length > 0 && (
         <section className="relative group bg-cream-warm" aria-label="Featured collections">
-          <div className="relative w-full aspect-[16/9] sm:aspect-[1024/323] overflow-hidden">
+          {/* Phones get the banner's portrait artwork when one is uploaded;
+              otherwise the wide creative shows complete (letterboxed) rather
+              than cropped to a third of itself. */}
+          <div
+            className={`relative w-full overflow-hidden sm:aspect-[1024/323] ${
+              slides[currentSlide]?.mobileImage ? 'aspect-[4/5]' : 'aspect-[16/9]'
+            }`}
+          >
             {slides.map((slide, idx) => (
               <Link
                 key={slide.id}
@@ -137,10 +145,20 @@ export default function Home() {
                   idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
+                {slide.mobileImage && (
+                  <img
+                    src={slide.mobileImage}
+                    alt={slide.title || ''}
+                    className="sm:hidden w-full h-full object-cover"
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                  />
+                )}
                 <img
                   src={slide.image}
                   alt={slide.title || ''}
-                  className="w-full h-full object-cover"
+                  className={`w-full h-full sm:object-cover ${
+                    slide.mobileImage ? 'hidden sm:block' : 'object-contain'
+                  }`}
                   loading={idx === 0 ? 'eager' : 'lazy'}
                 />
               </Link>

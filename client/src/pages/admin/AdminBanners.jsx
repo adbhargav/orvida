@@ -8,7 +8,7 @@ const inputClass =
 
 const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft';
 
-const EMPTY = { title: '', subtitle: '', image: '', link: '/category/plants', buttonText: 'Discover collection', displayOrder: 1 };
+const EMPTY = { title: '', subtitle: '', image: '', mobileImage: '', link: '/category/plants', buttonText: 'Discover collection', displayOrder: 1 };
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState([]);
@@ -45,7 +45,7 @@ export default function AdminBanners() {
     loadBanners();
   }, [loadBanners]);
 
-  const handleUpload = async (event) => {
+  const handleUpload = (field) => async (event) => {
     const files = Array.from(event.target.files || []);
     event.target.value = '';
     if (files.length === 0) return;
@@ -54,7 +54,7 @@ export default function AdminBanners() {
     setFormError('');
     try {
       const res = await api.uploads.images([files[0]]);
-      if (res.urls?.[0]) setForm((prev) => ({ ...prev, image: res.urls[0] }));
+      if (res.urls?.[0]) setForm((prev) => ({ ...prev, [field]: res.urls[0] }));
     } catch (err) {
       setFormError(err.message || 'Image upload failed.');
     } finally {
@@ -75,6 +75,7 @@ export default function AdminBanners() {
       title: item.title || '',
       subtitle: item.subtitle || '',
       image: item.image || '',
+      mobileImage: item.mobile_image || item.mobileImage || '',
       link: item.link || '',
       buttonText: item.button_text || item.buttonText || '',
       displayOrder: item.display_order || item.displayOrder || 1,
@@ -93,6 +94,7 @@ export default function AdminBanners() {
       title: form.title.trim(),
       subtitle: form.subtitle.trim(),
       image: form.image,
+      mobileImage: form.mobileImage,
       link: form.link.trim(),
       buttonText: form.buttonText.trim(),
       displayOrder: Number(form.displayOrder) || 1,
@@ -242,9 +244,9 @@ export default function AdminBanners() {
               </div>
 
               <div className="space-y-1.5">
-                <label className={labelClass}>Banner image</label>
+                <label className={labelClass}>Banner image (desktop)</label>
                 <div className="border border-dashed border-line-strong rounded-md p-5 text-center hover:border-emerald-default transition">
-                  <input type="file" accept="image/*" id="banner-image" onChange={handleUpload} className="hidden" disabled={uploading} />
+                  <input type="file" accept="image/*" id="banner-image" onChange={handleUpload('image')} className="hidden" disabled={uploading} />
                   <label htmlFor="banner-image" className="cursor-pointer block space-y-1.5">
                     {uploading ? <Loader2 className="w-5 h-5 text-emerald-default mx-auto animate-spin" />
                                : <Upload className="w-5 h-5 text-emerald-default mx-auto" />}
@@ -255,6 +257,28 @@ export default function AdminBanners() {
                 {form.image && (
                   <div className="aspect-[21/9] rounded-md overflow-hidden border border-line mt-2">
                     <img src={form.image} alt="Banner preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelClass}>Mobile image (optional)</label>
+                <div className="border border-dashed border-line-strong rounded-md p-5 text-center hover:border-emerald-default transition">
+                  <input type="file" accept="image/*" id="banner-mobile-image" onChange={handleUpload('mobileImage')} className="hidden" disabled={uploading} />
+                  <label htmlFor="banner-mobile-image" className="cursor-pointer block space-y-1.5">
+                    {uploading ? <Loader2 className="w-5 h-5 text-emerald-default mx-auto animate-spin" />
+                               : <Upload className="w-5 h-5 text-emerald-default mx-auto" />}
+                    <p className="text-sm font-medium text-ink">
+                      {uploading ? 'Uploading…' : form.mobileImage ? 'Replace mobile image' : 'Click to upload'}
+                    </p>
+                    <p className="text-xs text-ink-faint">
+                      Tall format for phones — roughly 4:5. Without one, phones show the full wide image letterboxed.
+                    </p>
+                  </label>
+                </div>
+                {form.mobileImage && (
+                  <div className="aspect-[4/5] w-32 rounded-md overflow-hidden border border-line mt-2">
+                    <img src={form.mobileImage} alt="Mobile banner preview" className="w-full h-full object-cover" />
                   </div>
                 )}
               </div>
