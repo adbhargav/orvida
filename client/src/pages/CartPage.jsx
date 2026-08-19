@@ -2,10 +2,13 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, ArrowRight, ArrowLeft, Minus, Plus, ShoppingBag, Loader2 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import usePageMeta from '../hooks/usePageMeta';
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 export default function CartPage() {
+  usePageMeta({ title: 'Your Cart | ORIVIDA', path: '/cart', robots: 'noindex, follow' });
+
   const navigate = useNavigate();
   const {
     cartItems, updateQuantity, removeFromCart, subtotal, freeShippingThreshold,

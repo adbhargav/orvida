@@ -4,6 +4,7 @@ import { Check, Lock, Loader2, AlertCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import usePageMeta from '../hooks/usePageMeta';
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
@@ -34,6 +35,8 @@ const loadRazorpayScript = () =>
   });
 
 export default function Checkout() {
+  usePageMeta({ title: 'Checkout | ORIVIDA', path: '/checkout', robots: 'noindex, follow' });
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const {

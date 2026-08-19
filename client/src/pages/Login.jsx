@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-do
 import { useAuth } from '../context/AuthContext';
 import { ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import logoImg from '../assets/logo.png';
+import usePageMeta from '../hooks/usePageMeta';
 
 const inputClass =
   'w-full px-0 py-3 bg-transparent border-b border-line text-ink placeholder:text-ink-faint ' +
@@ -26,6 +27,12 @@ export default function Login() {
   const [mode, setMode] = useState(location.pathname === '/signup' ? 'signup' : 'signin');
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [error, setError] = useState('');
+
+  usePageMeta({
+    title: mode === 'signup' ? 'Create Account | ORIVIDA' : 'Sign In | ORIVIDA',
+    path: mode === 'signup' ? '/signup' : '/login',
+    robots: 'noindex, follow',
+  });
 
   const update = (field) => (event) => {
     setFormData({ ...formData, [field]: event.target.value });

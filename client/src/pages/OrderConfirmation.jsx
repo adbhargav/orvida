@@ -3,12 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { Check, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
+import usePageMeta from '../hooks/usePageMeta';
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 const STAGES = ['Processing', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
 
 export default function OrderConfirmation() {
+  usePageMeta({ title: 'Your Order | ORIVIDA', path: '/orders', robots: 'noindex, follow' });
+
   const { id } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);

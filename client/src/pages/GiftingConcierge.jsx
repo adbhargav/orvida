@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { COMPANY } from '../config/company';
+import usePageMeta from '../hooks/usePageMeta';
 
 const inputClass =
   'w-full px-3.5 py-3 border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
@@ -30,6 +31,8 @@ const SERVICES = [
 ];
 
 export default function GiftingConcierge() {
+  usePageMeta({ title: 'Bespoke Gifting Concierge | ORIVIDA', path: '/gifting-concierge', description: 'Corporate gifting and bespoke plant hampers curated by ORIVIDA — tell us the occasion and our concierge will design it.' });
+
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

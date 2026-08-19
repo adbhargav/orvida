@@ -30,6 +30,7 @@ import addressRoutes from './routes/addressRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
 import { handleRazorpayWebhook } from './controllers/paymentController.js';
+import { getSitemap, getRobots } from './controllers/seoController.js';
 
 dotenv.config();
 
@@ -132,6 +133,10 @@ app.get('/uploads/:filename', async (req, res) => {
     res.status(500).json({ success: false, message: 'Could not load the file' });
   }
 });
+
+// Crawler endpoints, generated from the live catalogue.
+app.get('/sitemap.xml', getSitemap);
+app.get('/robots.txt', getRobots);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

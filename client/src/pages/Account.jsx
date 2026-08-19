@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import usePageMeta from '../hooks/usePageMeta';
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
@@ -24,6 +25,8 @@ const inputClass =
 const labelClass = 'type-eyebrow text-ink-soft block mb-1.5';
 
 export default function Account() {
+  usePageMeta({ title: 'Your Account | ORIVIDA', path: '/account', robots: 'noindex, follow' });
+
   const { user, logout, updateProfile } = useAuth();
 
   const [activeTab, setActiveTab] = useState('orders');

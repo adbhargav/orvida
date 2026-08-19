@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, Check, X, SlidersHorizontal, ArrowRight } fr
 import ProductCard from '../components/product/ProductCard';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { api } from '../services/api';
+import usePageMeta from '../hooks/usePageMeta';
 
 const PRICE_OPTIONS = [
   { value: 'all', label: 'All prices' },
@@ -207,6 +208,33 @@ export default function CategoryPage() {
 
   const subcategories = category?.subcategories || [];
   const activeSub = subcategories.find((s) => s.slug === subSlug) || null;
+
+  usePageMeta(
+    category
+      ? {
+          title: `${activeSub?.name || category.name}${category.tagline && !activeSub ? ` — ${category.tagline}` : ''} | ORIVIDA`,
+          description:
+            category.description ||
+            `Shop ${activeSub?.name || category.name} at ORIVIDA — hand-nurtured botanicals and heritage craft delivered across India.`,
+          image: activeSub?.image || category.banner,
+          path: activeSub ? `/category/${category.slug}/${activeSub.slug}` : `/category/${category.slug}`,
+          // Search and filter permutations must not compete with the clean
+          // collection URL in the index.
+          robots: searchTerm ? 'noindex, follow' : undefined,
+          breadcrumbs: {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://orvida.in/' },
+              { '@type': 'ListItem', position: 2, name: category.name, item: `https://orvida.in/category/${category.slug}` },
+              ...(activeSub
+                ? [{ '@type': 'ListItem', position: 3, name: activeSub.name }]
+                : []),
+            ],
+          },
+        }
+      : { title: 'Collection | ORIVIDA' }
+  );
 
   // Only offer tags that exist in this collection, so no filter dead-ends.
   const tagOptions = useMemo(() => {

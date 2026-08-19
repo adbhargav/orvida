@@ -6,6 +6,14 @@
  * half-filled in the admin panel still renders completely.
  */
 
+export const SEO_DEFAULTS = {
+  metaTitle: 'ORIVIDA — Our Passion, UR Luxury | Premium Plants, Gifting & Décor',
+  metaDescription:
+    'ORIVIDA offers handcrafted botanical luxury, rare indoor plants, bespoke plant hampers, balcony makeovers, and authentic bell metal & ceramic decor — delivered across India.',
+  ogImage: '',
+  titleSuffix: ' | ORIVIDA',
+};
+
 export const ANNOUNCEMENTS_DEFAULTS = {
   messages: [
     'Complimentary shipping on orders above ₹1,999',

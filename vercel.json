@@ -3,9 +3,16 @@
   "outputDirectory": "client/dist",
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "https://orvida.onrender.com/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://orvida.onrender.com/robots.txt"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
 }
-

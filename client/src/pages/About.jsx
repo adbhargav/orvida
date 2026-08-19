@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { api } from '../services/api';
 import { ABOUT_PAGE_DEFAULTS, mergeContent } from '../config/siteContentDefaults';
+import usePageMeta from '../hooks/usePageMeta';
 
 // The whole page is editable from Admin → Site Content; the defaults render
 // until (and wherever) an admin has saved their own copy.
@@ -21,6 +22,14 @@ export default function About() {
       });
     return () => { cancelled = true; };
   }, []);
+
+  usePageMeta({
+    title: 'Our Story | ORIVIDA',
+    description: content.heroIntro,
+    image: content.heroImage,
+    path: '/about',
+    type: 'article',
+  });
 
   return (
     <div className="bg-canvas">

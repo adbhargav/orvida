@@ -5,8 +5,11 @@ import { useWishlist } from '../context/WishlistContext';
 import ProductCard from '../components/product/ProductCard';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { api } from '../services/api';
+import usePageMeta from '../hooks/usePageMeta';
 
 export default function Wishlist() {
+  usePageMeta({ title: 'Your Wishlist | ORIVIDA', path: '/wishlist', robots: 'noindex, follow' });
+
   const { wishlistIds } = useWishlist();
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [products, setProducts] = useState([]);

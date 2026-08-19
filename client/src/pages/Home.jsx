@@ -4,7 +4,8 @@ import { ArrowRight, ArrowLeft, Leaf, Award, ShieldCheck, Sparkles, Star } from 
 import ProductCard from '../components/product/ProductCard';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { api } from '../services/api';
-import { HOME_BRAND_STORY_DEFAULTS, mergeContent } from '../config/siteContentDefaults';
+import { HOME_BRAND_STORY_DEFAULTS, SEO_DEFAULTS, mergeContent } from '../config/siteContentDefaults';
+import usePageMeta from '../hooks/usePageMeta';
 
 const ASSURANCES = [
   { icon: Award, label: 'Acclimatised specimens' },
@@ -39,6 +40,7 @@ export default function Home() {
   const [slides, setSlides] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [brandStory, setBrandStory] = useState(HOME_BRAND_STORY_DEFAULTS);
+  const [seo, setSeo] = useState(SEO_DEFAULTS);
   const [ready, setReady] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -54,7 +56,7 @@ export default function Home() {
         api.categories.getAll(),
         api.banners.getAll(),
         api.reviews.getRecent(3),
-        api.content.get('home_brand_story'),
+        api.content.get('home_brand_story', 'seo_settings'),
       ]);
 
       if (cancelled) return;
@@ -96,6 +98,7 @@ export default function Home() {
 
       if (contentRes.status === 'fulfilled') {
         setBrandStory(mergeContent(HOME_BRAND_STORY_DEFAULTS, contentRes.value.content?.home_brand_story));
+        setSeo(mergeContent(SEO_DEFAULTS, contentRes.value.content?.seo_settings));
       }
 
       setReady(true);
@@ -117,6 +120,13 @@ export default function Home() {
 
   const bestsellers = products.filter((p) => p.isBestseller).slice(0, 4);
   const newArrivals = products.filter((p) => p.isNew).slice(0, 4);
+
+  usePageMeta({
+    title: seo.metaTitle,
+    description: seo.metaDescription,
+    image: seo.ogImage,
+    path: '/',
+  });
 
   return (
     <div className="bg-canvas">

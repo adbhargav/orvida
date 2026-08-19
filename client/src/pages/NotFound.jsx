@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import usePageMeta from '../hooks/usePageMeta';
 
 const SUGGESTIONS = [
   { label: 'Plants', to: '/category/plants' },
@@ -10,6 +11,8 @@ const SUGGESTIONS = [
 ];
 
 export default function NotFound() {
+  usePageMeta({ title: 'Page Not Found | ORIVIDA', path: '/404', robots: 'noindex, follow' });
+
   return (
     <div className="min-h-[70vh] bg-canvas flex items-center justify-center px-6 py-20">
       <div className="max-w-lg w-full text-center space-y-8">

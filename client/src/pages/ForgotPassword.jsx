@@ -4,6 +4,7 @@ import { ArrowRight, Loader2, AlertCircle, MailCheck, ArrowLeft } from 'lucide-r
 import { api } from '../services/api';
 import { sendResetEmail } from '../config/firebase';
 import logoImg from '../assets/logo.png';
+import usePageMeta from '../hooks/usePageMeta';
 
 const inputClass =
   'w-full px-0 py-3 bg-transparent border-b border-line text-ink placeholder:text-ink-faint ' +
@@ -12,6 +13,8 @@ const inputClass =
 const labelClass = 'type-eyebrow text-ink-soft block mb-1';
 
 export default function ForgotPassword() {
+  usePageMeta({ title: 'Reset Your Password | ORIVIDA', path: '/forgot-password', robots: 'noindex, follow' });
+
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

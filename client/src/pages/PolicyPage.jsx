@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { POLICIES } from '../config/policyDefaults';
+import usePageMeta from '../hooks/usePageMeta';
 
 /**
  * Renders one policy (/policies/:slug). Copy comes from the site_content
@@ -30,6 +31,13 @@ export default function PolicyPage() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  usePageMeta({
+    title: `${policy?.title || 'Policies'} | ORIVIDA`,
+    description: (policy?.body || '').replace(/[#-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 158),
+    path: `/policies/${slug}`,
+    type: 'article',
+  });
 
   if (!fallback) return <Navigate to="/" replace />;
 

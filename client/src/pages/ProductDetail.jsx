@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import usePageMeta from '../hooks/usePageMeta';
 import {
   Heart, Check, ShieldCheck, Truck, ChevronRight, ChevronDown, Minus, Plus,
   Loader2, MapPin, Star,
@@ -96,6 +97,57 @@ export default function ProductDetail() {
         : { ok: false, message: 'Not yet on the express network. Standard dispatch takes 5–7 days.' }
     );
   };
+
+  usePageMeta(
+    product
+      ? {
+          title: `${product.name} | ORIVIDA`,
+          description:
+            product.shortDescription ||
+            (product.description || '').replace(/\s+/g, ' ').slice(0, 160),
+          image: product.images?.[0]?.url,
+          path: `/product/${product.slug}`,
+          type: 'product',
+          jsonLd: {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.name,
+            image: (product.images || []).map((i) => i.url).slice(0, 4),
+            description: product.shortDescription || undefined,
+            sku: product.sku || undefined,
+            brand: { '@type': 'Brand', name: 'ORIVIDA' },
+            ...(product.reviewCount > 0 && {
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: product.avgRating,
+                reviewCount: product.reviewCount,
+              },
+            }),
+            offers: {
+              '@type': 'Offer',
+              url: `https://orvida.in/product/${product.slug}`,
+              priceCurrency: 'INR',
+              price: product.effectivePrice,
+              availability:
+                product.stock > 0
+                  ? 'https://schema.org/InStock'
+                  : 'https://schema.org/OutOfStock',
+            },
+          },
+          breadcrumbs: {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://orvida.in/' },
+              ...(product.categoryName
+                ? [{ '@type': 'ListItem', position: 2, name: product.categoryName, item: `https://orvida.in/category/${product.categorySlug}` }]
+                : []),
+              { '@type': 'ListItem', position: product.categoryName ? 3 : 2, name: product.name },
+            ],
+          },
+        }
+      : { title: 'ORIVIDA' }
+  );
 
   const handleAddToCart = () => {
     addToCart(product, selectedVariant, quantity);

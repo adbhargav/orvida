@@ -4,6 +4,7 @@ import { ArrowRight, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
 import { verifyResetCode, completePasswordReset, signOutFirebase } from '../config/firebase';
 import logoImg from '../assets/logo.png';
+import usePageMeta from '../hooks/usePageMeta';
 
 const inputClass =
   'w-full px-0 py-3 bg-transparent border-b border-line text-ink placeholder:text-ink-faint ' +
@@ -15,6 +16,8 @@ const labelClass = 'type-eyebrow text-ink-soft block mb-1';
 // one-time oobCode; we verify it, let the visitor choose a new password,
 // confirm it with Firebase, then sync the new password to our own backend.
 export default function ResetPassword() {
+  usePageMeta({ title: 'Choose a New Password | ORIVIDA', path: '/reset-password', robots: 'noindex, follow' });
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const oobCode = searchParams.get('oobCode');

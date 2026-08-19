@@ -5,6 +5,7 @@ import {
   ANNOUNCEMENTS_DEFAULTS,
   HOME_BRAND_STORY_DEFAULTS,
   ABOUT_PAGE_DEFAULTS,
+  SEO_DEFAULTS,
   mergeContent,
 } from '../../config/siteContentDefaults';
 import { POLICIES } from '../../config/policyDefaults';
@@ -103,6 +104,7 @@ export default function AdminSiteContent() {
   const [brandStory, setBrandStory] = useState(HOME_BRAND_STORY_DEFAULTS);
   const [about, setAbout] = useState(ABOUT_PAGE_DEFAULTS);
   const [policies, setPolicies] = useState(POLICIES);
+  const [seo, setSeo] = useState(SEO_DEFAULTS);
   // Edited as one message per line.
   const [announcementsText, setAnnouncementsText] = useState(ANNOUNCEMENTS_DEFAULTS.messages.join('\n'));
   const [savingKey, setSavingKey] = useState(null);
@@ -118,9 +120,10 @@ export default function AdminSiteContent() {
     setLoadError('');
     try {
       const policyKeys = Object.keys(POLICIES).map((slug) => `policy_${slug}`);
-      const res = await api.content.get('home_brand_story', 'about_page', 'announcements', ...policyKeys);
+      const res = await api.content.get('home_brand_story', 'about_page', 'announcements', 'seo_settings', ...policyKeys);
       setBrandStory(mergeContent(HOME_BRAND_STORY_DEFAULTS, res.content?.home_brand_story));
       setAbout(mergeContent(ABOUT_PAGE_DEFAULTS, res.content?.about_page));
+      setSeo(mergeContent(SEO_DEFAULTS, res.content?.seo_settings));
       const savedMessages = res.content?.announcements?.messages;
       if (Array.isArray(savedMessages) && savedMessages.length > 0) {
         setAnnouncementsText(savedMessages.join('\n'));
@@ -208,6 +211,70 @@ export default function AdminSiteContent() {
           <button onClick={load} className="text-sm text-emerald-default link-underline">Try again</button>
         </div>
       )}
+
+      {/* SEO */}
+      <SectionCard
+        title="SEO — search & social"
+        description="The homepage title and description Google shows in results, plus the image used when the store is shared on WhatsApp, Facebook or X."
+        onSave={() => save('seo_settings', seo)}
+        saving={savingKey === 'seo_settings'}
+        savedAt={savedKey === 'seo_settings'}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className={labelClass}>Meta title</label>
+              <input
+                type="text"
+                value={seo.metaTitle}
+                onChange={(e) => setSeo({ ...seo, metaTitle: e.target.value })}
+                className={inputClass}
+              />
+              <p className={`text-xs ${seo.metaTitle.length > 60 ? 'text-amber-700' : 'text-ink-faint'}`}>
+                {seo.metaTitle.length}/60 characters — Google truncates longer titles.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className={labelClass}>Meta description</label>
+              <textarea
+                rows={3}
+                value={seo.metaDescription}
+                onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
+                className={`${inputClass} resize-y`}
+              />
+              <p className={`text-xs ${seo.metaDescription.length > 160 ? 'text-amber-700' : 'text-ink-faint'}`}>
+                {seo.metaDescription.length}/160 characters — aim for 150–160.
+              </p>
+            </div>
+
+            {/* Live preview of the Google result */}
+            <div className="p-4 rounded-md border border-line bg-white space-y-1">
+              <p className="type-eyebrow text-ink-faint">Google preview</p>
+              <p className="text-[13px] text-emerald-deep">orvida.in</p>
+              <p className="text-[#1a0dab] text-lg leading-snug truncate">{seo.metaTitle || 'Page title'}</p>
+              <p className="text-[13px] text-ink-soft line-clamp-2">
+                {seo.metaDescription || 'Page description shown under the title in search results.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <ImageField
+              label="Social share image"
+              value={seo.ogImage}
+              aspect="aspect-[1200/630]"
+              hint="Shown when the site is shared — 1200×630 works best"
+              onChange={(v) => setSeo({ ...seo, ogImage: v })}
+            />
+            <p className="text-xs text-ink-faint leading-relaxed">
+              Product and collection pages generate their own titles, descriptions and structured
+              data automatically from the catalogue — this section covers the homepage and the
+              default social image.
+            </p>
+          </div>
+        </div>
+      </SectionCard>
 
       {/* Announcement bar */}
       <SectionCard
