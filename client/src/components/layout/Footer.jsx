@@ -92,8 +92,10 @@ export default function Footer() {
       {/* Main */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-16 grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-4 space-y-5">
-          <Link to="/" aria-label="ORIVIDA home">
-            <img src={logoImg} alt="ORIVIDA" className="h-14 w-auto object-contain brightness-0 invert" />
+          <Link to="/" aria-label="ORIVIDA home" className="inline-block">
+            <span className="inline-flex items-center bg-emerald-default rounded-md px-4 py-1.5">
+              <img src={logoImg} alt="ORIVIDA" className="h-12 w-auto object-contain" />
+            </span>
           </Link>
           <p className="text-sm text-emerald-light/70 leading-relaxed max-w-sm">
             Hand-nurtured rare botanicals, bespoke plant hampers and heritage Bastar bell metal craft — curated for
