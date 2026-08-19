@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Search, Loader2, AlertCircle, Download, Truck, Package, ChevronDown, X,
-  FileText, Tag, IndianRupee,
+  FileText, Tag, IndianRupee, RefreshCw, ExternalLink, Send,
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -85,6 +85,33 @@ export default function AdminOrders() {
       notify('success', `Tracking saved for ${order.orderNumber}.`);
     } catch (err) {
       notify('error', err.message || 'Could not save the tracking number.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleCreateShipment = async (order) => {
+    setBusyId(order.id);
+    try {
+      await api.orders.createShipment(order.id);
+      notify('success', `Delhivery shipment created for ${order.orderNumber}.`);
+      await loadOrders();
+    } catch (err) {
+      notify('error', err.message || 'Shipment creation failed — it stays Pending for retry.');
+      await loadOrders(); // pick up the stored shipment_error
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleRefreshShipment = async (order) => {
+    setBusyId(order.id);
+    try {
+      const res = await api.orders.refreshShipmentTracking(order.id);
+      notify('success', `${order.orderNumber}: ${res.tracking?.status || 'status refreshed'}.`);
+      await loadOrders();
+    } catch (err) {
+      notify('error', err.message || 'Could not refresh the courier status.');
     } finally {
       setBusyId(null);
     }
@@ -406,6 +433,67 @@ export default function AdminOrders() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Delhivery shipment */}
+                <div className="pt-4 border-t border-line space-y-2">
+                  <span className="type-eyebrow text-ink-soft flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" /> Courier — Delhivery
+                  </span>
+
+                  {order.delhiveryAwb ? (
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                      <span className="text-ink">
+                        AWB <span className="tabular font-medium">{order.delhiveryAwb}</span>
+                      </span>
+                      <span className="text-ink-soft">
+                        Shipping <span className="text-ink tabular">{money(order.shippingFee)}</span>
+                      </span>
+                      <span className="text-ink-soft">
+                        Status <span className="text-ink">{order.deliveryStatus || 'Manifested'}</span>
+                      </span>
+                      {order.pickupStatus && (
+                        <span className="text-ink-soft">
+                          Pickup <span className="text-ink">{order.pickupStatus}</span>
+                        </span>
+                      )}
+                      {order.trackingUrl && (
+                        <a
+                          href={order.trackingUrl} target="_blank" rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-emerald-default link-underline"
+                        >
+                          Track shipment <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleRefreshShipment(order)}
+                        disabled={isBusy}
+                        className="inline-flex items-center gap-1.5 text-emerald-default link-underline disabled:opacity-40"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isBusy ? 'animate-spin' : ''}`} /> Refresh status
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      <span className={order.shipmentError ? 'text-rose-700' : 'text-ink-soft'}>
+                        {order.shipmentError
+                          ? `Needs attention: ${order.shipmentError}`
+                          : order.status === 'Cancelled'
+                            ? 'Order cancelled — no shipment.'
+                            : 'No courier shipment yet.'}
+                      </span>
+                      {order.status !== 'Cancelled' && (
+                        <button
+                          onClick={() => handleCreateShipment(order)}
+                          disabled={isBusy}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-emerald-default text-white text-xs font-medium hover:bg-emerald-deep disabled:opacity-40 transition"
+                        >
+                          {isBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                          {order.shipmentError ? 'Retry shipment' : 'Create shipment'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </article>
             );

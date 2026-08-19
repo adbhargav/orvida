@@ -91,3 +91,22 @@ ALTER TABLE order_items ADD COLUMN IF NOT EXISTS sku VARCHAR(100);
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS is_approved BOOLEAN DEFAULT TRUE;
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS order_id INT REFERENCES orders(id) ON DELETE SET NULL;
 CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
+
+-- 9. Delhivery shipping integration.
+--    Products carry the FINAL PACKED PARCEL figures (not raw plant size);
+--    orders carry the shipment created for them. Everything is nullable so
+--    existing rows keep working untouched.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS shipping_weight_kg NUMERIC(7, 3);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS package_length_cm NUMERIC(6, 1);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS package_width_cm NUMERIC(6, 1);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS package_height_cm NUMERIC(6, 1);
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_provider VARCHAR(40);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delhivery_awb VARCHAR(60);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delhivery_shipment_id VARCHAR(100);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(60);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_url TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_status VARCHAR(60);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_created_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_error TEXT;
+CREATE INDEX IF NOT EXISTS idx_orders_awb ON orders(delhivery_awb);

@@ -71,7 +71,9 @@ export default function Home() {
               link: `/category/${cat.slug}/${sub.slug}`,
             }))
         );
-        setCollections(rail.slice(0, 6));
+        // Every subcategory with imagery, across all categories — capping this
+        // list used to hide everything beyond the first category.
+        setCollections(rail);
       }
 
       if (bannerRes.status === 'fulfilled') {

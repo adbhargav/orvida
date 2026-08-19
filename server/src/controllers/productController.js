@@ -128,16 +128,17 @@ export const createProduct = async (req, res, next) => {
     const {
       name, slug, categoryId, subcategoryId, price, discountPrice, sku, stock,
       tags, isFeatured, isNew, isBestseller, shortDescription, description,
-      careInstructions, craftsmanshipStory, images, variants
+      careInstructions, craftsmanshipStory, images, variants,
+      shippingWeightKg, packageLengthCm, packageWidthCm, packageHeightCm
     } = req.body;
 
     const generatedSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
     const prodRes = await client.query(
-      `INSERT INTO products (name, slug, category_id, subcategory_id, price, discount_price, sku, stock, tags, is_featured, is_new, is_bestseller, short_description, description, care_instructions, craftsmanship_story)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      `INSERT INTO products (name, slug, category_id, subcategory_id, price, discount_price, sku, stock, tags, is_featured, is_new, is_bestseller, short_description, description, care_instructions, craftsmanship_story, shipping_weight_kg, package_length_cm, package_width_cm, package_height_cm)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
        RETURNING *`,
-      [name, generatedSlug, categoryId, subcategoryId, price, discountPrice, sku, stock || 10, tags || [], isFeatured || false, isNew || false, isBestseller || false, shortDescription, description, careInstructions, craftsmanshipStory]
+      [name, generatedSlug, categoryId, subcategoryId, price, discountPrice, sku, stock || 10, tags || [], isFeatured || false, isNew || false, isBestseller || false, shortDescription, description, careInstructions, craftsmanshipStory, shippingWeightKg ?? null, packageLengthCm ?? null, packageWidthCm ?? null, packageHeightCm ?? null]
     );
 
     const newProduct = prodRes.rows[0];
@@ -173,7 +174,8 @@ export const updateProduct = async (req, res, next) => {
     const {
       name, categoryId, subcategoryId, price, discountPrice, sku, stock, tags,
       isFeatured, isNew, isBestseller, shortDescription, description,
-      careInstructions, craftsmanshipStory, images
+      careInstructions, craftsmanshipStory, images,
+      shippingWeightKg, packageLengthCm, packageWidthCm, packageHeightCm
     } = req.body;
 
     // Booleans and discount_price are assigned directly rather than through
@@ -195,13 +197,19 @@ export const updateProduct = async (req, res, next) => {
               description = COALESCE($13, description),
               care_instructions = COALESCE($14, care_instructions),
               craftsmanship_story = COALESCE($15, craftsmanship_story),
+              shipping_weight_kg = COALESCE($16, shipping_weight_kg),
+              package_length_cm = COALESCE($17, package_length_cm),
+              package_width_cm = COALESCE($18, package_width_cm),
+              package_height_cm = COALESCE($19, package_height_cm),
               updated_at = CURRENT_TIMESTAMP
-        WHERE id = $16
+        WHERE id = $20
         RETURNING *`,
       [
         name, categoryId, subcategoryId ?? null, price, discountPrice ?? null, sku, stock, tags,
         isFeatured, isNew, isBestseller, shortDescription, description,
-        careInstructions, craftsmanshipStory, id
+        careInstructions, craftsmanshipStory,
+        shippingWeightKg ?? null, packageLengthCm ?? null, packageWidthCm ?? null, packageHeightCm ?? null,
+        id
       ]
     );
 

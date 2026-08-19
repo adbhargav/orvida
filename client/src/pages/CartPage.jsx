@@ -8,9 +8,9 @@ const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}
 export default function CartPage() {
   const navigate = useNavigate();
   const {
-    cartItems, updateQuantity, removeFromCart, subtotal, shippingFee, freeShippingThreshold,
+    cartItems, updateQuantity, removeFromCart, subtotal, freeShippingThreshold,
     discountAmount, appliedPromo, promoError, promoLoading, applyPromo, removePromo,
-    promoCode, setPromoCode, finalTotal, totalItemsCount,
+    promoCode, setPromoCode, totalItemsCount,
   } = useCart();
 
   if (cartItems.length === 0) {
@@ -158,14 +158,11 @@ export default function CartPage() {
                     <dd className="text-emerald-default tabular">−{formatPrice(discountAmount)}</dd>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <dt className="text-ink-soft">Shipping</dt>
-                  <dd className="text-ink tabular">{shippingFee === 0 ? 'Complimentary' : formatPrice(shippingFee)}</dd>
-                </div>
                 <div className="flex justify-between pt-4 border-t border-line">
                   <dt className="type-heading text-lg text-ink">Total</dt>
-                  <dd className="type-price text-xl text-ink">{formatPrice(finalTotal)}</dd>
+                  <dd className="type-price text-xl text-ink">{formatPrice(Math.max(0, Math.round(subtotal - discountAmount)))}</dd>
                 </div>
+                <p className="text-xs text-ink-faint">Shipping calculated at checkout</p>
               </dl>
 
               {remainingForFreeShipping > 0 && (

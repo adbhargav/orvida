@@ -37,13 +37,17 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const {
-    cartItems, finalTotal, clearCart, subtotal, shippingFee, discountAmount,
+    cartItems, clearCart, subtotal, shippingFee, discountAmount,
     appliedPromo, getPricingPayload,
   } = useCart();
 
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Live courier quote for the entered pincode: null until a valid pincode is
+  // typed, then { status: 'loading' | 'ok' | 'unserviceable', fee, source }.
+  const [shipQuote, setShipQuote] = useState(null);
 
   const [formData, setFormData] = useState(() => {
     const base = {
@@ -59,6 +63,39 @@ export default function Checkout() {
   });
 
   useEffect(() => { loadRazorpayScript(); }, []);
+
+  // Quote delivery through the backend (which asks Delhivery) as soon as a
+  // complete pincode is present. Debounced so typing doesn't spam the API.
+  const pincodeDigits = formData.pincode.replace(/\D/g, '');
+  useEffect(() => {
+    if (pincodeDigits.length !== 6 || cartItems.length === 0) {
+      setShipQuote(null);
+      return;
+    }
+
+    let cancelled = false;
+    setShipQuote({ status: 'loading' });
+    const handle = setTimeout(async () => {
+      try {
+        const res = await api.shipping.quote(getPricingPayload(), pincodeDigits);
+        if (cancelled) return;
+        if (!res.serviceable) {
+          setShipQuote({ status: 'unserviceable' });
+        } else {
+          setShipQuote({ status: 'ok', fee: Number(res.shippingFee) || 0, source: res.source, city: res.city });
+        }
+      } catch {
+        // A failed quote falls back to the standard estimate; the server
+        // recomputes the authoritative figure at payment time anyway.
+        if (!cancelled) setShipQuote(null);
+      }
+    }, 450);
+
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [pincodeDigits, cartItems.length, getPricingPayload]);
+
+  const quotedShipping = shipQuote?.status === 'ok' ? shipQuote.fee : shippingFee;
+  const payableTotal = Math.max(0, Math.round(subtotal - discountAmount + quotedShipping));
 
   useEffect(() => {
     if (!user) return;
@@ -98,6 +135,9 @@ export default function Checkout() {
     if (next > 1) {
       const problem = validate();
       if (problem) return setErrorMessage(problem);
+      if (shipQuote?.status === 'unserviceable') {
+        return setErrorMessage('Delivery is not available to this pincode yet. Please try another address.');
+      }
     }
     setErrorMessage('');
     setStep(next);
@@ -120,6 +160,7 @@ export default function Checkout() {
       // The server prices the cart and opens the Razorpay order.
       const razorOrderRes = await api.orders.createRazorpayOrder(getPricingPayload(), {
         couponCode: appliedPromo || null,
+        pincode: pincodeDigits,
         notes: { email: formData.email, customerName: formData.fullName },
       });
 
@@ -280,6 +321,22 @@ export default function Checkout() {
                     <label htmlFor="pincode" className={labelClass}>Pincode</label>
                     <input id="pincode" name="pincode" type="text" required inputMode="numeric" maxLength={6} autoComplete="postal-code"
                       value={formData.pincode} onChange={handleChange} className={`${inputClass} tabular`} placeholder="560038" />
+                    {shipQuote?.status === 'loading' && (
+                      <p className="text-xs text-ink-faint flex items-center gap-1.5 mt-1.5">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Checking delivery to this pincode…
+                      </p>
+                    )}
+                    {shipQuote?.status === 'ok' && (
+                      <p className="text-xs text-emerald-default mt-1.5">
+                        Delivery available{shipQuote.city ? ` to ${shipQuote.city}` : ''} —{' '}
+                        {shipQuote.fee === 0 ? 'complimentary shipping' : `${formatPrice(shipQuote.fee)} shipping`}
+                      </p>
+                    )}
+                    {shipQuote?.status === 'unserviceable' && (
+                      <p className="text-xs text-rose-600 mt-1.5">
+                        We cannot deliver to this pincode yet.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -338,7 +395,7 @@ export default function Checkout() {
                     {isProcessing ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</>
                     ) : (
-                      <><Lock className="w-3.5 h-3.5" /> Pay {formatPrice(finalTotal)}</>
+                      <><Lock className="w-3.5 h-3.5" /> Pay {formatPrice(payableTotal)}</>
                     )}
                   </button>
 
@@ -396,12 +453,21 @@ export default function Checkout() {
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <dt className="text-ink-soft">Shipping</dt>
-                  <dd className="text-ink tabular">{shippingFee === 0 ? 'Complimentary' : formatPrice(shippingFee)}</dd>
+                  <dt className="text-ink-soft">
+                    Shipping
+                    {shipQuote?.status === 'ok' && shipQuote.source?.startsWith('delhivery') && (
+                      <span className="block text-[11px] text-ink-faint">via Delhivery</span>
+                    )}
+                  </dt>
+                  <dd className="text-ink tabular">
+                    {shipQuote?.status === 'loading'
+                      ? '…'
+                      : quotedShipping === 0 ? 'Complimentary' : formatPrice(quotedShipping)}
+                  </dd>
                 </div>
                 <div className="flex justify-between pt-3 border-t border-line">
                   <dt className="type-heading text-base text-ink">Total</dt>
-                  <dd className="type-price text-xl text-ink">{formatPrice(finalTotal)}</dd>
+                  <dd className="type-price text-xl text-ink">{formatPrice(payableTotal)}</dd>
                 </div>
               </dl>
             </div>

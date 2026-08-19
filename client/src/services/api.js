@@ -139,6 +139,11 @@ export const normalizeProduct = (row) => {
     images,
     variants,
     reviews: row.reviews || [],
+    // Final packed-parcel figures for courier rating (not raw product size).
+    shippingWeightKg: toNumber(pick(row, 'shippingWeightKg', 'shipping_weight_kg')),
+    packageLengthCm: toNumber(pick(row, 'packageLengthCm', 'package_length_cm')),
+    packageWidthCm: toNumber(pick(row, 'packageWidthCm', 'package_width_cm')),
+    packageHeightCm: toNumber(pick(row, 'packageHeightCm', 'package_height_cm')),
   };
 };
 
@@ -168,6 +173,13 @@ export const normalizeOrder = (row) => {
     paymentFailedReason: pick(row, 'paymentFailedReason', 'payment_failed_reason') || '',
     courierName: pick(row, 'courierName', 'courier_name') || '',
     deliverySlot: pick(row, 'deliverySlot', 'delivery_slot') || '',
+    deliveryProvider: pick(row, 'deliveryProvider', 'delivery_provider') || '',
+    delhiveryAwb: pick(row, 'delhiveryAwb', 'delhivery_awb') || '',
+    deliveryStatus: pick(row, 'deliveryStatus', 'delivery_status') || '',
+    trackingUrl: pick(row, 'trackingUrl', 'tracking_url') || '',
+    pickupStatus: pick(row, 'pickupStatus', 'pickup_status') || '',
+    shipmentError: pick(row, 'shipmentError', 'shipment_error') || '',
+    shipmentCreatedAt: pick(row, 'shipmentCreatedAt', 'shipment_created_at') || null,
     shippingAddress: pick(row, 'shippingAddress', 'shipping_address') || {},
     createdAt: pick(row, 'createdAt', 'created_at') || null,
     customerName: pick(row, 'customerName', 'customer_name') || '',
@@ -260,6 +272,10 @@ export const api = {
     },
     updateStatus: (orderId, status) =>
       request(`/orders/admin/${orderId}/status`, { method: 'PATCH', body: { status }, auth: true }),
+    createShipment: (orderId) =>
+      request(`/shipping/admin/orders/${orderId}/create`, { method: 'POST', auth: true }),
+    refreshShipmentTracking: (orderId) =>
+      request(`/shipping/admin/orders/${orderId}/refresh`, { method: 'POST', auth: true }),
     updateTracking: (orderId, trackingNumber, courierName = 'India Post') =>
       request(`/orders/admin/${orderId}/tracking`, {
         method: 'PATCH',
@@ -332,6 +348,13 @@ export const api = {
     create: (data) => request('/addresses', { method: 'POST', body: data, auth: true }),
     update: (id, data) => request(`/addresses/${id}`, { method: 'PUT', body: data, auth: true }),
     remove: (id) => request(`/addresses/${id}`, { method: 'DELETE', auth: true }),
+  },
+
+  shipping: {
+    // items: [{productId, quantity}] — the server prices the parcel from the
+    // database, so nothing about the courier account reaches the browser.
+    quote: (items, pincode) =>
+      request('/shipping/quote', { method: 'POST', body: { items, pincode } }),
   },
 
   banners: {

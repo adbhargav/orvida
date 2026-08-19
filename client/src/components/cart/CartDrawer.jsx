@@ -14,7 +14,6 @@ export default function CartDrawer() {
     updateQuantity,
     removeFromCart,
     subtotal,
-    shippingFee,
     freeShippingThreshold,
     discountAmount,
     appliedPromo,
@@ -24,7 +23,6 @@ export default function CartDrawer() {
     removePromo,
     promoCode,
     setPromoCode,
-    finalTotal,
     totalItemsCount,
   } = useCart();
 
@@ -195,14 +193,11 @@ export default function CartDrawer() {
                     <dd className="text-emerald-default tabular">−{formatPrice(discountAmount)}</dd>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <dt className="text-ink-soft">Shipping</dt>
-                  <dd className="text-ink tabular">{shippingFee === 0 ? 'Complimentary' : formatPrice(shippingFee)}</dd>
-                </div>
                 <div className="flex justify-between pt-3 border-t border-line">
                   <dt className="type-heading text-base text-ink">Total</dt>
-                  <dd className="type-price text-lg text-ink">{formatPrice(finalTotal)}</dd>
+                  <dd className="type-price text-lg text-ink">{formatPrice(Math.max(0, Math.round(subtotal - discountAmount)))}</dd>
                 </div>
+                <p className="text-xs text-ink-faint">Shipping calculated at checkout</p>
               </dl>
 
               <button

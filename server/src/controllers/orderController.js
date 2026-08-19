@@ -2,6 +2,8 @@ import { query, pool } from '../config/db.js';
 import { razorpayInstance, verifyRazorpaySignature, isRazorpayConfigured } from '../config/razorpay.js';
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from '../services/emailService.js';
 import { renderInvoiceHtml, renderLabelHtml } from '../services/documentService.js';
+import { isDelhiveryConfigured, computeParcel, getShippingRate } from '../services/delhiveryService.js';
+import { createShipmentForOrder } from '../services/shipmentService.js';
 
 const FREE_SHIPPING_THRESHOLD = 1999;
 const STANDARD_SHIPPING_FEE = 250;
@@ -13,7 +15,7 @@ const STANDARD_SHIPPING_FEE = 250;
  * derived here from the products, product_variants and coupons tables, so a
  * tampered request body cannot change what the customer is charged.
  */
-const priceCartServerSide = async (client, rawItems, couponCode) => {
+const priceCartServerSide = async (client, rawItems, couponCode, destinationPin = null) => {
   const items = Array.isArray(rawItems) ? rawItems : [];
   if (items.length === 0) {
     const error = new Error('Your cart is empty.');
@@ -30,6 +32,7 @@ const priceCartServerSide = async (client, rawItems, couponCode) => {
 
     const productRes = await client.query(
       `SELECT p.id, p.name, p.price, p.discount_price, p.stock,
+              p.shipping_weight_kg, p.package_length_cm, p.package_width_cm, p.package_height_cm,
               (SELECT img.url FROM product_images img
                 WHERE img.product_id = p.id
                 ORDER BY img.display_order ASC LIMIT 1) AS image
@@ -79,6 +82,11 @@ const priceCartServerSide = async (client, rawItems, couponCode) => {
       price: unitPrice,
       quantity,
       image: product.image || null,
+      // Parcel data rides along so shipping can be priced from the same rows.
+      shipping_weight_kg: product.shipping_weight_kg,
+      package_length_cm: product.package_length_cm,
+      package_width_cm: product.package_width_cm,
+      package_height_cm: product.package_height_cm,
     });
   }
 
@@ -112,7 +120,27 @@ const priceCartServerSide = async (client, rawItems, couponCode) => {
     }
   }
 
-  const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
+  // Shipping: complimentary above the advertised threshold; otherwise the
+  // live Delhivery rate for this parcel and pincode (the rate is cached for
+  // 30 minutes, so the quote at checkout and the re-price at payment
+  // verification agree). Flat fee only when Delhivery is unavailable.
+  let shippingFee;
+  if (subtotal >= FREE_SHIPPING_THRESHOLD) {
+    shippingFee = 0;
+  } else if (destinationPin && /^\d{6}$/.test(String(destinationPin)) && isDelhiveryConfigured()) {
+    try {
+      const parcel = computeParcel(lineItems);
+      shippingFee = await getShippingRate({
+        destinationPin: String(destinationPin),
+        grams: parcel.chargeableGrams,
+      });
+    } catch (rateError) {
+      console.error('Delhivery rate lookup failed during pricing, using flat fee:', rateError.message);
+      shippingFee = STANDARD_SHIPPING_FEE;
+    }
+  } else {
+    shippingFee = STANDARD_SHIPPING_FEE;
+  }
   const total = Math.max(0, Math.round(subtotal - discountAmount + shippingFee));
 
   return {
@@ -128,9 +156,9 @@ const priceCartServerSide = async (client, rawItems, couponCode) => {
 export const createRazorpayOrder = async (req, res, next) => {
   const client = await pool.connect();
   try {
-    const { items, couponCode, currency = 'INR', notes } = req.body;
+    const { items, couponCode, currency = 'INR', notes, pincode } = req.body;
 
-    const pricing = await priceCartServerSide(client, items, couponCode);
+    const pricing = await priceCartServerSide(client, items, couponCode, pincode);
 
     if (pricing.total <= 0) {
       return res.status(400).json({ success: false, message: 'Order total must be greater than zero.' });
@@ -218,7 +246,7 @@ export const verifyPaymentAndCreateOrder = async (req, res, next) => {
     const userEmail = req.user ? req.user.email : shippingAddress.email;
 
     // Re-price from the database. Never trust totals sent by the browser.
-    const pricing = await priceCartServerSide(client, items, couponCode);
+    const pricing = await priceCartServerSide(client, items, couponCode, shippingAddress.pincode);
 
     // Confirm the customer actually paid the amount we calculated.
     const paidOrder = await razorpayInstance.orders.fetch(razorpayOrderId);
@@ -291,6 +319,13 @@ export const verifyPaymentAndCreateOrder = async (req, res, next) => {
         console.error('Order confirmation email failed:', err.message)
       );
     }
+
+    // Manifest the Delhivery shipment in the background. A courier failure
+    // never disturbs the paid order — it stays Pending with the error stored
+    // for the admin panel's retry button.
+    createShipmentForOrder(createdOrder.id).catch((err) =>
+      console.error('Automatic shipment creation failed:', err.message)
+    );
 
     res.status(201).json({
       success: true,

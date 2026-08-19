@@ -207,6 +207,22 @@ export default function OrderConfirmation() {
           </div>
 
           <div className="space-y-1.5">
+            {order.delhiveryAwb && (
+              <>
+                <span className="type-eyebrow text-ink-soft">Courier</span>
+                <p className="text-sm text-ink">
+                  Delhivery · AWB <span className="tabular">{order.delhiveryAwb}</span>
+                </p>
+                {order.trackingUrl && (
+                  <a
+                    href={order.trackingUrl} target="_blank" rel="noreferrer"
+                    className="text-sm text-emerald-default link-underline"
+                  >
+                    Track your shipment
+                  </a>
+                )}
+              </>
+            )}
             {order.trackingNumber && (
               <p className="text-sm text-ink-soft pt-2">
                 Tracking: <span className="text-ink tabular">{order.trackingNumber}</span>

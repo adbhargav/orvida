@@ -17,6 +17,11 @@ const EMPTY_FORM = {
   isNew: false,
   isFeatured: false,
   tags: '',
+  // Final packed parcel, not the raw plant — used for courier rating.
+  shippingWeightKg: '',
+  packageLengthCm: '',
+  packageWidthCm: '',
+  packageHeightCm: '',
 };
 
 const inputClass =
@@ -101,6 +106,10 @@ export default function AdminProducts() {
       isNew: product.isNew,
       isFeatured: product.isFeatured,
       tags: (product.tags || []).join(', '),
+      shippingWeightKg: product.shippingWeightKg ?? '',
+      packageLengthCm: product.packageLengthCm ?? '',
+      packageWidthCm: product.packageWidthCm ?? '',
+      packageHeightCm: product.packageHeightCm ?? '',
     });
     setGalleryUrls((product.images || []).map((img) => img.url));
     setFormError('');
@@ -148,6 +157,15 @@ export default function AdminProducts() {
     }
     if (galleryUrls.length === 0) return setFormError('Add at least one product image.');
 
+    const shippingWeightKg = Number(formState.shippingWeightKg);
+    const packageLengthCm = Number(formState.packageLengthCm);
+    const packageWidthCm = Number(formState.packageWidthCm);
+    const packageHeightCm = Number(formState.packageHeightCm);
+    if (!(shippingWeightKg > 0)) return setFormError('Enter the packed parcel weight in kg (greater than 0).');
+    if (!(packageLengthCm > 0)) return setFormError('Enter the package length in cm (greater than 0).');
+    if (!(packageWidthCm > 0)) return setFormError('Enter the package width in cm (greater than 0).');
+    if (!(packageHeightCm > 0)) return setFormError('Enter the package height in cm (greater than 0).');
+
     const payload = {
       name: formState.name.trim(),
       categoryId: Number(formState.categoryId),
@@ -164,6 +182,10 @@ export default function AdminProducts() {
       description: formState.description.trim(),
       careInstructions: formState.careInstructions.trim(),
       images: galleryUrls,
+      shippingWeightKg,
+      packageLengthCm,
+      packageWidthCm,
+      packageHeightCm,
     };
 
     setSaving(true);
@@ -546,6 +568,55 @@ export default function AdminProducts() {
                     onChange={(e) => setFormState({ ...formState, tags: e.target.value })}
                     className={inputClass}
                   />
+                </div>
+              </div>
+
+              {/* Shipping details — the FINAL PACKED PARCEL, priced by Delhivery */}
+              <div className="space-y-3 pt-4 border-t border-line">
+                <div>
+                  <p className="type-eyebrow text-emerald-default">Shipping details</p>
+                  <p className="text-xs text-ink-faint mt-1">
+                    Enter the final packed parcel — box, soil, padding included — not the raw plant.
+                    Delivery charges are quoted from these figures.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>Weight (kg)</label>
+                    <input
+                      type="number" required min="0.01" step="0.01" placeholder="1.20"
+                      value={formState.shippingWeightKg}
+                      onChange={(e) => setFormState({ ...formState, shippingWeightKg: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>Length (cm)</label>
+                    <input
+                      type="number" required min="1" step="0.5" placeholder="40"
+                      value={formState.packageLengthCm}
+                      onChange={(e) => setFormState({ ...formState, packageLengthCm: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>Width (cm)</label>
+                    <input
+                      type="number" required min="1" step="0.5" placeholder="20"
+                      value={formState.packageWidthCm}
+                      onChange={(e) => setFormState({ ...formState, packageWidthCm: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>Height (cm)</label>
+                    <input
+                      type="number" required min="1" step="0.5" placeholder="20"
+                      value={formState.packageHeightCm}
+                      onChange={(e) => setFormState({ ...formState, packageHeightCm: e.target.value })}
+                      className={inputClass}
+                    />
+                  </div>
                 </div>
               </div>
 
