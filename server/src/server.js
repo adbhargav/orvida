@@ -106,8 +106,28 @@ app.use(
   express.static(path.join(process.cwd(), 'assets'), { maxAge: '30d', immutable: false })
 );
 
-// Runtime uploads written by the admin portal.
+// Runtime uploads: legacy files committed to the repo serve from disk;
+// everything uploaded since lives in Postgres so it survives redeploys.
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), { maxAge: '7d' }));
+app.get('/uploads/:filename', async (req, res) => {
+  const { filename } = req.params;
+  if (!/^[\w][\w.-]*$/.test(filename)) {
+    return res.status(400).json({ success: false, message: 'Invalid filename' });
+  }
+  try {
+    const { query } = await import('./config/db.js');
+    const result = await query('SELECT mime_type, data FROM uploads WHERE filename = $1', [filename]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'File not found' });
+    }
+    res.set('Content-Type', result.rows[0].mime_type);
+    res.set('Cache-Control', 'public, max-age=2592000, immutable');
+    res.send(result.rows[0].data);
+  } catch (error) {
+    console.error('Upload fetch failed:', error.message);
+    res.status(500).json({ success: false, message: 'Could not load the file' });
+  }
+});
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

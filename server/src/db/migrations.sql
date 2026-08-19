@@ -123,3 +123,14 @@ CREATE TABLE IF NOT EXISTS site_content (
 -- 11. Optional portrait/square banner artwork for phones. Without it the
 --     storefront letterboxes the wide image instead of cropping it.
 ALTER TABLE banners ADD COLUMN IF NOT EXISTS mobile_image TEXT;
+
+-- 12. Admin uploads live in the database, not on disk: Render's filesystem
+--     is wiped on every deploy, which kept breaking uploaded imagery.
+CREATE TABLE IF NOT EXISTS uploads (
+  id SERIAL PRIMARY KEY,
+  filename VARCHAR(255) UNIQUE NOT NULL,
+  mime_type VARCHAR(80) NOT NULL,
+  data BYTEA NOT NULL,
+  size_bytes INT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
