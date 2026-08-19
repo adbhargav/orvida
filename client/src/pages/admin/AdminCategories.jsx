@@ -293,8 +293,18 @@ export default function AdminCategories() {
                     {cat.subcategories.map((sub) => (
                       <span
                         key={sub.id}
-                        className="group/sub inline-flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-full bg-emerald-subtle text-ink-soft text-xs"
+                        className="group/sub inline-flex items-center gap-1.5 pl-1.5 pr-1.5 py-1 rounded-full bg-emerald-subtle text-ink-soft text-xs"
                       >
+                        {sub.image ? (
+                          <img src={sub.image} alt="" className="w-5 h-5 rounded-full object-cover border border-line" />
+                        ) : (
+                          <span
+                            className="w-5 h-5 rounded-full bg-white border border-dashed border-line-strong flex items-center justify-center text-[9px] text-ink-faint"
+                            title="No image yet — click the pencil to upload one"
+                          >
+                            +
+                          </span>
+                        )}
                         {sub.name}
                         <button
                           onClick={() => openSubModal(cat, sub)}
