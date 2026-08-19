@@ -110,3 +110,12 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS pickup_status VARCHAR(60);
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_created_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipment_error TEXT;
 CREATE INDEX IF NOT EXISTS idx_orders_awb ON orders(delhivery_awb);
+
+-- 10. Editable site content. One row per content block (homepage brand story,
+--     Our Story page, …), the whole block stored as JSON. The storefront
+--     falls back to its built-in copy when a key is absent.
+CREATE TABLE IF NOT EXISTS site_content (
+  key VARCHAR(80) PRIMARY KEY,
+  content JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

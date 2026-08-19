@@ -13,6 +13,7 @@ import AdminOffers from './admin/AdminOffers';
 import AdminCoupons from './admin/AdminCoupons';
 import AdminEnquiries from './admin/AdminEnquiries';
 import AdminNewsletter from './admin/AdminNewsletter';
+import AdminSiteContent from './admin/AdminSiteContent';
 
 const PANELS = {
   overview: AdminOverview,
@@ -26,6 +27,7 @@ const PANELS = {
   coupons: AdminCoupons,
   enquiries: AdminEnquiries,
   newsletter: AdminNewsletter,
+  content: AdminSiteContent,
 };
 
 export default function AdminDashboard() {

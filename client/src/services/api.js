@@ -245,6 +245,18 @@ export const api = {
     create: (data) => request('/categories', { method: 'POST', body: data, auth: true }),
     update: (id, data) => request(`/categories/${id}`, { method: 'PUT', body: data, auth: true }),
     remove: (id) => request(`/categories/${id}`, { method: 'DELETE', auth: true }),
+    createSubcategory: (categoryId, data) =>
+      request(`/categories/${categoryId}/subcategories`, { method: 'POST', body: data, auth: true }),
+    updateSubcategory: (id, data) =>
+      request(`/categories/subcategories/${id}`, { method: 'PUT', body: data, auth: true }),
+    removeSubcategory: (id) =>
+      request(`/categories/subcategories/${id}`, { method: 'DELETE', auth: true }),
+  },
+
+  content: {
+    // Returns { content: { key: {...} } }; pass keys to fetch specific blocks.
+    get: (...keys) => request(`/content${keys.length ? `?keys=${keys.join(',')}` : ''}`),
+    update: (key, content) => request(`/content/${key}`, { method: 'PUT', body: { content }, auth: true }),
   },
 
   orders: {

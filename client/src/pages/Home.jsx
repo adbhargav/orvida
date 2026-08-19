@@ -4,6 +4,7 @@ import { ArrowRight, ArrowLeft, Leaf, Award, ShieldCheck, Sparkles, Star } from 
 import ProductCard from '../components/product/ProductCard';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { api } from '../services/api';
+import { HOME_BRAND_STORY_DEFAULTS, mergeContent } from '../config/siteContentDefaults';
 
 const ASSURANCES = [
   { icon: Award, label: 'Acclimatised specimens' },
@@ -37,6 +38,7 @@ export default function Home() {
   const [collections, setCollections] = useState([]);
   const [slides, setSlides] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [brandStory, setBrandStory] = useState(HOME_BRAND_STORY_DEFAULTS);
   const [ready, setReady] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -47,11 +49,12 @@ export default function Home() {
     let cancelled = false;
 
     (async () => {
-      const [prodRes, catRes, bannerRes, reviewRes] = await Promise.allSettled([
+      const [prodRes, catRes, bannerRes, reviewRes, contentRes] = await Promise.allSettled([
         api.products.getAll({ limit: 24 }),
         api.categories.getAll(),
         api.banners.getAll(),
         api.reviews.getRecent(3),
+        api.content.get('home_brand_story'),
       ]);
 
       if (cancelled) return;
@@ -88,6 +91,10 @@ export default function Home() {
       }
 
       if (reviewRes.status === 'fulfilled') setReviews(reviewRes.value.reviews || []);
+
+      if (contentRes.status === 'fulfilled') {
+        setBrandStory(mergeContent(HOME_BRAND_STORY_DEFAULTS, contentRes.value.content?.home_brand_story));
+      }
 
       setReady(true);
     })();
@@ -222,38 +229,37 @@ export default function Home() {
         </section>
       )}
 
-      {/* Brand narrative */}
+      {/* Brand narrative — editable from Admin → Site Content */}
       <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-20 sm:py-28">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <div className="space-y-6 lg:pr-10">
-            <span className="type-eyebrow text-emerald-default block">Ancestral craft, botanical mastery</span>
+            <span className="type-eyebrow text-emerald-default block">{brandStory.eyebrow}</span>
             <h2 className="type-display text-3xl sm:text-[2.75rem] text-ink">
-              Where botanical passion meets{' '}
-              <span className="italic text-emerald-default">uncompromising luxury</span>
+              {brandStory.heading}{' '}
+              <span className="italic text-emerald-default">{brandStory.headingAccent}</span>
             </h2>
 
             <div className="space-y-4 text-ink-soft leading-relaxed max-w-prose">
-              <p>
-                At ORIVIDA we believe true luxury is organic, enduring and deeply connected to nature. Our
-                botanists hand-nurture every variegated Monstera and Sansevieria for more than eighteen months in
-                organic soil blends before it reaches your home.
-              </p>
-              <p>
-                Our arts collection honours Chhattisgarh's four-thousand-year-old Bastar bell metal tradition and
-                Jaipur's ceramic artists — planters and sculptures made to be inherited.
-              </p>
+              <p>{brandStory.paragraph1}</p>
+              {brandStory.paragraph2 && <p>{brandStory.paragraph2}</p>}
             </div>
 
             <Link
               to="/about"
               className="inline-flex items-center gap-2 px-7 py-3.5 border border-ink text-ink hover:bg-ink hover:text-white text-[11px] uppercase tracking-[0.16em] transition-colors duration-200"
             >
-              Read our story <ArrowRight className="w-3.5 h-3.5" />
+              {brandStory.buttonText} <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="hidden lg:block">
-            <div className="aspect-[4/3] bg-emerald-subtle" aria-hidden="true" />
+            {brandStory.image ? (
+              <div className="aspect-[4/3] overflow-hidden bg-emerald-subtle">
+                <img src={brandStory.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div className="aspect-[4/3] bg-emerald-subtle" aria-hidden="true" />
+            )}
           </div>
         </div>
       </section>

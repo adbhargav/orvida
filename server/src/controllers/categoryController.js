@@ -92,6 +92,87 @@ export const updateCategory = async (req, res, next) => {
   }
 };
 
+const slugify = (value) =>
+  String(value || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+export const createSubcategory = async (req, res, next) => {
+  try {
+    const { categoryId } = req.params;
+    const { name, slug, image } = req.body;
+    if (!name?.trim()) {
+      return res.status(400).json({ success: false, message: 'Subcategory name is required.' });
+    }
+
+    const parent = await query('SELECT id FROM categories WHERE id = $1', [categoryId]);
+    if (parent.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+
+    const result = await query(
+      `INSERT INTO subcategories (category_id, name, slug, image)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [categoryId, name.trim(), slugify(slug || name), image || null]
+    );
+
+    res.status(201).json({ success: true, subcategory: result.rows[0] });
+  } catch (error) {
+    // UNIQUE(category_id, slug)
+    if (error.code === '23505') {
+      return res.status(409).json({ success: false, message: 'A subcategory with this slug already exists in the category.' });
+    }
+    next(error);
+  }
+};
+
+export const updateSubcategory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, slug, image } = req.body;
+    if (!name?.trim()) {
+      return res.status(400).json({ success: false, message: 'Subcategory name is required.' });
+    }
+
+    const result = await query(
+      `UPDATE subcategories SET name = $1, slug = $2, image = $3 WHERE id = $4 RETURNING *`,
+      [name.trim(), slugify(slug || name), image || null, id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Subcategory not found' });
+    }
+
+    res.json({ success: true, subcategory: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505') {
+      return res.status(409).json({ success: false, message: 'A subcategory with this slug already exists in the category.' });
+    }
+    next(error);
+  }
+};
+
+export const deleteSubcategory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const inUse = await query('SELECT COUNT(*)::int AS count FROM products WHERE subcategory_id = $1', [id]);
+    if (inUse.rows[0].count > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `This subcategory still has ${inUse.rows[0].count} product(s). Reassign or remove them first.`,
+      });
+    }
+
+    const result = await query('DELETE FROM subcategories WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Subcategory not found' });
+    }
+
+    res.json({ success: true, message: 'Subcategory deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const deleteCategory = async (req, res, next) => {
   try {
     const { id } = req.params;

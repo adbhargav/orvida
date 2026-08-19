@@ -28,6 +28,7 @@ import enquiryRoutes from './routes/enquiryRoutes.js';
 import newsletterRoutes from './routes/newsletterRoutes.js';
 import addressRoutes from './routes/addressRoutes.js';
 import shippingRoutes from './routes/shippingRoutes.js';
+import contentRoutes from './routes/contentRoutes.js';
 import { handleRazorpayWebhook } from './controllers/paymentController.js';
 
 dotenv.config();
@@ -121,6 +122,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/shipping', shippingRoutes);
+app.use('/api/content', contentRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/reviews', reviewRoutes);

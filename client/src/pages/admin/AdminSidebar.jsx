@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   LayoutDashboard, Package, Layers, CreditCard, Users,
   Image as ImageIcon, Tag, Ticket, ShoppingBag, LogOut, Store,
-  MessageSquare, Mail,
+  MessageSquare, Mail, FileText,
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 
@@ -19,6 +19,7 @@ const MENU_ITEMS = [
   { id: 'enquiries', label: 'Enquiries', icon: MessageSquare },
   { id: 'newsletter', label: 'Newsletter', icon: Mail },
   { id: 'banners', label: 'Banners', icon: ImageIcon },
+  { id: 'content', label: 'Site Content', icon: FileText },
   { id: 'offers', label: 'Offers', icon: Tag },
   { id: 'coupons', label: 'Coupons', icon: Ticket },
 ];
