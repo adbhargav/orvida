@@ -6,12 +6,8 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { COMPANY } from '../../config/company';
+import { ANNOUNCEMENTS_DEFAULTS } from '../../config/siteContentDefaults';
 import logoImg from '../../assets/logo.png';
-const ANNOUNCEMENTS = [
-  'Complimentary shipping on orders above ₹1,999',
-  'Any 4 plants at ₹999 — limited botanical offer',
-  '7-day plant health guarantee on every specimen',
-];
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
 
 export default function Navbar() {
@@ -29,6 +25,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [announcementIndex, setAnnouncementIndex] = useState(0);
+  const [announcements, setAnnouncements] = useState(ANNOUNCEMENTS_DEFAULTS.messages);
   // Google avatar URLs regularly fail to load (their CDN rejects hotlinks),
   // so fall back to the member's initial rather than a broken image.
   const [photoFailed, setPhotoFailed] = useState(false);
@@ -50,12 +47,29 @@ export default function Navbar() {
     return () => { cancelled = true; };
   }, []);
 
+  // The announcement bar copy is editable from Admin → Site Content.
   useEffect(() => {
+    let cancelled = false;
+    api.content
+      .get('announcements')
+      .then((res) => {
+        const messages = res.content?.announcements?.messages;
+        if (!cancelled && Array.isArray(messages) && messages.length > 0) {
+          setAnnouncements(messages.filter((m) => String(m).trim()));
+          setAnnouncementIndex(0);
+        }
+      })
+      .catch(() => { /* defaults already showing */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (announcements.length < 2) return undefined;
     const timer = setInterval(() => {
-      setAnnouncementIndex((i) => (i + 1) % ANNOUNCEMENTS.length);
+      setAnnouncementIndex((i) => (i + 1) % announcements.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [announcements.length]);
 
   useEffect(() => {
     if (isSearchOpen) searchInputRef.current?.focus();
@@ -131,7 +145,7 @@ export default function Navbar() {
       <div className="bg-emerald-default text-white">
         <div className="max-w-[1600px] mx-auto px-4 h-9 flex items-center justify-center overflow-hidden">
           <p key={announcementIndex} className="text-xs tracking-[0.08em] text-center animate-fadeIn">
-            {ANNOUNCEMENTS[announcementIndex]}
+            {announcements[announcementIndex] || announcements[0]}
           </p>
         </div>
       </div>

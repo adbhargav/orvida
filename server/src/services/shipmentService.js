@@ -1,4 +1,5 @@
 import { query } from '../config/db.js';
+import { sendShipmentCreatedEmail, sendOrderStatusEmail } from './emailService.js';
 import {
   isDelhiveryConfigured,
   computeParcel,
@@ -72,6 +73,15 @@ export const createShipmentForOrder = async (orderId) => {
       [shipment.awb, shipment.shipmentId, shipment.status, publicTrackingUrl(shipment.awb), pickupStatus, orderId]
     );
 
+    const address = typeof order.shipping_address === 'string'
+      ? JSON.parse(order.shipping_address)
+      : order.shipping_address;
+    if (address?.email) {
+      sendShipmentCreatedEmail(address.email, order, shipment.awb, publicTrackingUrl(shipment.awb)).catch((err) =>
+        console.error('Shipment email failed:', err.message)
+      );
+    }
+
     return { awb: shipment.awb, status: shipment.status, pickupStatus };
   } catch (error) {
     console.error(`Delhivery shipment creation failed for order ${order.order_number}:`, error.message);
@@ -88,7 +98,10 @@ export const createShipmentForOrder = async (orderId) => {
  * courier fields and — where the mapping is unambiguous — the order status.
  */
 export const refreshOrderTracking = async (orderId) => {
-  const orderRes = await query('SELECT id, delhivery_awb, status FROM orders WHERE id = $1', [orderId]);
+  const orderRes = await query(
+    'SELECT id, order_number, status, delhivery_awb, shipping_address FROM orders WHERE id = $1',
+    [orderId]
+  );
   const order = orderRes.rows[0];
   if (!order) throw new Error(`Order ${orderId} not found`);
   if (!order.delhivery_awb) throw new Error('This order has no Delhivery shipment yet.');
@@ -104,6 +117,19 @@ export const refreshOrderTracking = async (orderId) => {
       WHERE id = $3`,
     [tracking.status, mappedStatus, orderId]
   );
+
+  // A courier-driven status change deserves the same email an admin-driven
+  // one sends (Shipped / Out for Delivery / Delivered).
+  if (mappedStatus && mappedStatus !== order.status) {
+    const address = typeof order.shipping_address === 'string'
+      ? JSON.parse(order.shipping_address)
+      : order.shipping_address;
+    if (address?.email) {
+      sendOrderStatusEmail(address.email, order.order_number, mappedStatus, order.delhivery_awb).catch((err) =>
+        console.error('Status email failed:', err.message)
+      );
+    }
+  }
 
   return { ...tracking, orderStatus: mappedStatus || order.status };
 };

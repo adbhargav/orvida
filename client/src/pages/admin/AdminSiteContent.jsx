@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, AlertCircle, Upload, Save } from 'lucide-react';
 import { api } from '../../services/api';
 import {
+  ANNOUNCEMENTS_DEFAULTS,
   HOME_BRAND_STORY_DEFAULTS,
   ABOUT_PAGE_DEFAULTS,
   mergeContent,
@@ -102,6 +103,8 @@ export default function AdminSiteContent() {
   const [brandStory, setBrandStory] = useState(HOME_BRAND_STORY_DEFAULTS);
   const [about, setAbout] = useState(ABOUT_PAGE_DEFAULTS);
   const [policies, setPolicies] = useState(POLICIES);
+  // Edited as one message per line.
+  const [announcementsText, setAnnouncementsText] = useState(ANNOUNCEMENTS_DEFAULTS.messages.join('\n'));
   const [savingKey, setSavingKey] = useState(null);
   const [savedKey, setSavedKey] = useState(null);
 
@@ -115,9 +118,13 @@ export default function AdminSiteContent() {
     setLoadError('');
     try {
       const policyKeys = Object.keys(POLICIES).map((slug) => `policy_${slug}`);
-      const res = await api.content.get('home_brand_story', 'about_page', ...policyKeys);
+      const res = await api.content.get('home_brand_story', 'about_page', 'announcements', ...policyKeys);
       setBrandStory(mergeContent(HOME_BRAND_STORY_DEFAULTS, res.content?.home_brand_story));
       setAbout(mergeContent(ABOUT_PAGE_DEFAULTS, res.content?.about_page));
+      const savedMessages = res.content?.announcements?.messages;
+      if (Array.isArray(savedMessages) && savedMessages.length > 0) {
+        setAnnouncementsText(savedMessages.join('\n'));
+      }
       setPolicies(
         Object.fromEntries(
           Object.entries(POLICIES).map(([slug, def]) => [
@@ -201,6 +208,30 @@ export default function AdminSiteContent() {
           <button onClick={load} className="text-sm text-emerald-default link-underline">Try again</button>
         </div>
       )}
+
+      {/* Announcement bar */}
+      <SectionCard
+        title="Announcement bar"
+        description="The rotating messages in the green strip at the very top of the store. One message per line; they rotate every few seconds."
+        onSave={() => {
+          const messages = announcementsText.split('\n').map((m) => m.trim()).filter(Boolean);
+          if (messages.length === 0) return notify('error', 'Add at least one announcement message.');
+          save('announcements', { messages });
+        }}
+        saving={savingKey === 'announcements'}
+        savedAt={savedKey === 'announcements'}
+      >
+        <div className="space-y-1.5">
+          <label className={labelClass}>Messages (one per line)</label>
+          <textarea
+            rows={4}
+            value={announcementsText}
+            onChange={(e) => setAnnouncementsText(e.target.value)}
+            className={`${inputClass} resize-y`}
+            placeholder={'Complimentary shipping on orders above ₹1,999\nAny 4 plants at ₹999 — limited botanical offer'}
+          />
+        </div>
+      </SectionCard>
 
       {/* Homepage brand story */}
       <SectionCard

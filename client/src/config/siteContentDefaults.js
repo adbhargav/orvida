@@ -6,6 +6,14 @@
  * half-filled in the admin panel still renders completely.
  */
 
+export const ANNOUNCEMENTS_DEFAULTS = {
+  messages: [
+    'Complimentary shipping on orders above ₹1,999',
+    'Any 4 plants at ₹999 — limited botanical offer',
+    '7-day plant health guarantee on every specimen',
+  ],
+};
+
 export const HOME_BRAND_STORY_DEFAULTS = {
   eyebrow: 'Ancestral craft, botanical mastery',
   heading: 'Where botanical passion meets',

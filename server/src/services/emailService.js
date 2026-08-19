@@ -346,6 +346,33 @@ export const sendOrderStatusEmail = async (userEmail, orderNumber, status, track
   });
 };
 
+export const sendShipmentCreatedEmail = async (userEmail, order, awb, trackingUrl) => {
+  const bodyRows = `
+    <tr>
+      <td class="px" style="padding:36px 40px 36px;">
+        <h1 class="h1" style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:${BRAND.ink};line-height:1.25;">
+          Your order is on its way to the courier
+        </h1>
+        <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:${BRAND.inkSoft};">
+          Your parcel has been booked with Delhivery and a pickup is scheduled from our atelier.
+          You can follow every step with the tracking number below.
+        </p>
+        <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BRAND.ink};">
+          Order <strong>${esc(order.order_number)}</strong>
+          <br />Delhivery AWB · <strong>${esc(awb)}</strong>
+        </p>
+        ${button(trackingUrl, 'Track your parcel')}
+      </td>
+    </tr>`;
+
+  return send({
+    to: userEmail,
+    subject: `Order ${order.order_number} — shipment booked (AWB ${awb})`,
+    html: layout({ preheader: 'Your parcel is booked with Delhivery.', bodyRows }),
+    text: `Order ${order.order_number} is booked with Delhivery. AWB ${awb}. Track: ${trackingUrl}`,
+  });
+};
+
 export const sendRefundEmail = async (userEmail, order, refundAmount) => {
   const bodyRows = `
     <tr>
