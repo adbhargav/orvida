@@ -58,7 +58,11 @@ const DEV_ORIGINS = [
 // The deployed storefront. CLIENT_URL / ADDITIONAL_ORIGINS can extend this
 // list, but the production frontend must never depend on a dashboard env var
 // being remembered.
-const PROD_ORIGINS = ['https://orvida.vercel.app'];
+const PROD_ORIGINS = [
+  'https://orvida.com',
+  'https://www.orvida.com',
+  'https://orvida.vercel.app',
+];
 
 const allowedOrigins = [
   ...PROD_ORIGINS,
