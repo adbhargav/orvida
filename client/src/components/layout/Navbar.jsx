@@ -172,13 +172,15 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Logo */}
+            {/* Logo — on its brand-green ground, navbar only */}
             <Link to="/" className="justify-self-center" aria-label="ORIVIDA home">
-              <img
-                src={logoImg}
-                alt="ORIVIDA"
-                className="h-11 sm:h-14 w-auto object-contain logo-on-light"
-              />
+              <span className="inline-flex items-center bg-emerald-default rounded-md px-4 py-1.5">
+                <img
+                  src={logoImg}
+                  alt="ORIVIDA"
+                  className="h-9 sm:h-12 w-auto object-contain"
+                />
+              </span>
             </Link>
 
             {/* Right */}
