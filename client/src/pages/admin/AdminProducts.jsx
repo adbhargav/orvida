@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Search, Upload, X, Download, Loader2, AlertCircle, ImageOff } from 'lucide-react';
 import { api } from '../../services/api';
+import SeoFields from '../../components/admin/SeoFields';
+import { useSeoSettings } from '../../context/SeoContext';
 
 const EMPTY_FORM = {
   name: '',
@@ -22,6 +24,20 @@ const EMPTY_FORM = {
   packageLengthCm: '',
   packageWidthCm: '',
   packageHeightCm: '',
+  // SEO — all optional; blank means "fall back at render time".
+  slug: '',
+  seoTitle: '',
+  seoDescription: '',
+  seoKeywords: '',
+  canonicalUrl: '',
+  metaRobots: 'index, follow',
+  ogTitle: '',
+  ogDescription: '',
+  ogImage: '',
+  twitterTitle: '',
+  twitterDescription: '',
+  twitterImage: '',
+  imageAltText: '',
 };
 
 const inputClass =
@@ -31,6 +47,7 @@ const inputClass =
 const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft';
 
 export default function AdminProducts() {
+  const seoSettings = useSeoSettings();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +127,19 @@ export default function AdminProducts() {
       packageLengthCm: product.packageLengthCm ?? '',
       packageWidthCm: product.packageWidthCm ?? '',
       packageHeightCm: product.packageHeightCm ?? '',
+      slug: product.slug || '',
+      seoTitle: product.seoTitle || '',
+      seoDescription: product.seoDescription || '',
+      seoKeywords: product.seoKeywords || '',
+      canonicalUrl: product.canonicalUrl || '',
+      metaRobots: product.metaRobots || 'index, follow',
+      ogTitle: product.ogTitle || '',
+      ogDescription: product.ogDescription || '',
+      ogImage: product.ogImage || '',
+      twitterTitle: product.twitterTitle || '',
+      twitterDescription: product.twitterDescription || '',
+      twitterImage: product.twitterImage || '',
+      imageAltText: product.imageAltText || '',
     });
     setGalleryUrls((product.images || []).map((img) => img.url));
     setFormError('');
@@ -186,6 +216,21 @@ export default function AdminProducts() {
       packageLengthCm,
       packageWidthCm,
       packageHeightCm,
+      // Empty strings are sent as-is; the server sanitises them to NULL so
+      // the storefront falls back at render time.
+      slug: formState.slug.trim(),
+      seoTitle: formState.seoTitle.trim(),
+      seoDescription: formState.seoDescription.trim(),
+      seoKeywords: formState.seoKeywords.trim(),
+      canonicalUrl: formState.canonicalUrl.trim(),
+      metaRobots: formState.metaRobots,
+      ogTitle: formState.ogTitle.trim(),
+      ogDescription: formState.ogDescription.trim(),
+      ogImage: formState.ogImage.trim(),
+      twitterTitle: formState.twitterTitle.trim(),
+      twitterDescription: formState.twitterDescription.trim(),
+      twitterImage: formState.twitterImage.trim(),
+      imageAltText: formState.imageAltText.trim(),
     };
 
     setSaving(true);
@@ -619,6 +664,17 @@ export default function AdminProducts() {
                   </div>
                 </div>
               </div>
+
+              <SeoFields
+                entity="product"
+                value={formState}
+                onChange={(patch) => setFormState({ ...formState, ...patch })}
+                name={formState.name}
+                fallbackDescription={formState.shortDescription || formState.description}
+                fallbackImage={galleryUrls[0] || ''}
+                pathPrefix="/product"
+                settings={seoSettings}
+              />
 
               <div className="space-y-1.5">
                 <label className={labelClass}>Short description</label>

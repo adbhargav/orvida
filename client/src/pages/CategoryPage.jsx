@@ -5,6 +5,9 @@ import ProductCard from '../components/product/ProductCard';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { api } from '../services/api';
 import usePageMeta from '../hooks/usePageMeta';
+import useRedirectFallback from '../hooks/useRedirectFallback';
+import { useSeoSettings } from '../context/SeoContext';
+import { generateCategoryMetadata } from '../lib/seo';
 
 const PRICE_OPTIONS = [
   { value: 'all', label: 'All prices' },
@@ -144,6 +147,7 @@ function FilterSheet({ open, onClose, groups, onReset, resultCount }) {
  * ------------------------------------------------------------------ */
 
 export default function CategoryPage() {
+  const seoSettings = useSeoSettings();
   const { slug, subSlug } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -209,31 +213,10 @@ export default function CategoryPage() {
   const subcategories = category?.subcategories || [];
   const activeSub = subcategories.find((s) => s.slug === subSlug) || null;
 
+  const redirecting = useRedirectFallback(Boolean(error));
+
   usePageMeta(
-    category
-      ? {
-          title: `${activeSub?.name || category.name}${category.tagline && !activeSub ? ` — ${category.tagline}` : ''} | ORIVIDA`,
-          description:
-            category.description ||
-            `Shop ${activeSub?.name || category.name} at ORIVIDA — hand-nurtured botanicals and heritage craft delivered across India.`,
-          image: activeSub?.image || category.banner,
-          path: activeSub ? `/category/${category.slug}/${activeSub.slug}` : `/category/${category.slug}`,
-          // Search and filter permutations must not compete with the clean
-          // collection URL in the index.
-          robots: searchTerm ? 'noindex, follow' : undefined,
-          breadcrumbs: {
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://orvida.in/' },
-              { '@type': 'ListItem', position: 2, name: category.name, item: `https://orvida.in/category/${category.slug}` },
-              ...(activeSub
-                ? [{ '@type': 'ListItem', position: 3, name: activeSub.name }]
-                : []),
-            ],
-          },
-        }
-      : { title: 'Collection | ORIVIDA' }
+    generateCategoryMetadata({ category, subcategory: activeSub, products, searchTerm }, seoSettings)
   );
 
   // Only offer tags that exist in this collection, so no filter dead-ends.
@@ -496,7 +479,7 @@ export default function CategoryPage() {
 
       {/* Grid */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-14">
-        {loading ? (
+        {loading || redirecting ? (
           // A quiet reserved area rather than animated skeleton cards, which
           // read as buffering. The grid simply fades in once data arrives.
           <div className="min-h-[40vh]" aria-busy="true" aria-live="polite">

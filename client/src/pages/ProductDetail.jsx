@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import usePageMeta from '../hooks/usePageMeta';
+import useRedirectFallback from '../hooks/useRedirectFallback';
+import { useSeoSettings } from '../context/SeoContext';
+import { generateProductMetadata, getImageAlt } from '../lib/seo';
 import {
   Heart, Check, ShieldCheck, Truck, ChevronRight, ChevronDown, Minus, Plus,
   Loader2, MapPin, Star,
@@ -37,6 +40,7 @@ function Accordion({ id, title, children, openId, setOpenId }) {
 }
 
 export default function ProductDetail() {
+  const seoSettings = useSeoSettings();
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -98,56 +102,12 @@ export default function ProductDetail() {
     );
   };
 
-  usePageMeta(
-    product
-      ? {
-          title: `${product.name} | ORIVIDA`,
-          description:
-            product.shortDescription ||
-            (product.description || '').replace(/\s+/g, ' ').slice(0, 160),
-          image: product.images?.[0]?.url,
-          path: `/product/${product.slug}`,
-          type: 'product',
-          jsonLd: {
-            '@context': 'https://schema.org',
-            '@type': 'Product',
-            name: product.name,
-            image: (product.images || []).map((i) => i.url).slice(0, 4),
-            description: product.shortDescription || undefined,
-            sku: product.sku || undefined,
-            brand: { '@type': 'Brand', name: 'ORIVIDA' },
-            ...(product.reviewCount > 0 && {
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: product.avgRating,
-                reviewCount: product.reviewCount,
-              },
-            }),
-            offers: {
-              '@type': 'Offer',
-              url: `https://orvida.in/product/${product.slug}`,
-              priceCurrency: 'INR',
-              price: product.effectivePrice,
-              availability:
-                product.stock > 0
-                  ? 'https://schema.org/InStock'
-                  : 'https://schema.org/OutOfStock',
-            },
-          },
-          breadcrumbs: {
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://orvida.in/' },
-              ...(product.categoryName
-                ? [{ '@type': 'ListItem', position: 2, name: product.categoryName, item: `https://orvida.in/category/${product.categorySlug}` }]
-                : []),
-              { '@type': 'ListItem', position: product.categoryName ? 3 : 2, name: product.name },
-            ],
-          },
-        }
-      : { title: 'ORIVIDA' }
-  );
+  // A renamed slug should follow its 301 rather than dead-end.
+  const redirecting = useRedirectFallback(Boolean(error === 'notfound'));
+
+  // Metadata resolves admin overrides → product content → global defaults
+  // in lib/seo, so this page stays declarative.
+  usePageMeta(generateProductMetadata(product, seoSettings));
 
   const handleAddToCart = () => {
     addToCart(product, selectedVariant, quantity);
@@ -160,7 +120,7 @@ export default function ProductDetail() {
     navigate('/checkout');
   };
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3 text-ink-soft">
         <Loader2 className="w-5 h-5 animate-spin" />
@@ -228,16 +188,21 @@ export default function ProductDetail() {
                         activeImage === idx ? 'border-ink' : 'border-line hover:border-line-strong'
                       }`}
                     >
-                      <img src={img.url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      <img src={img.url} alt={getImageAlt(product, idx)} className="w-full h-full object-cover" loading="lazy" />
                     </button>
                   ))}
                 </div>
               )}
 
               <div className="relative flex-1 aspect-[4/5] overflow-hidden bg-emerald-subtle border border-line">
+                {/* The hero image is this route's LCP element, so it is
+                    fetched eagerly and carries explicit dimensions. */}
                 <img
                   src={product.images[activeImage]?.url}
-                  alt={product.name}
+                  alt={getImageAlt(product, activeImage)}
+                  width="800"
+                  height="1000"
+                  fetchPriority="high"
                   className="w-full h-full object-cover"
                 />
                 <button

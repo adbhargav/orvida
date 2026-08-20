@@ -14,6 +14,7 @@ import AdminCoupons from './admin/AdminCoupons';
 import AdminEnquiries from './admin/AdminEnquiries';
 import AdminNewsletter from './admin/AdminNewsletter';
 import AdminSiteContent from './admin/AdminSiteContent';
+import AdminSeo from './admin/AdminSeo';
 
 const PANELS = {
   overview: AdminOverview,
@@ -28,6 +29,7 @@ const PANELS = {
   enquiries: AdminEnquiries,
   newsletter: AdminNewsletter,
   content: AdminSiteContent,
+  seo: AdminSeo,
 };
 
 export default function AdminDashboard() {

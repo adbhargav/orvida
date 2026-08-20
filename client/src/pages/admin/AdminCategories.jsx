@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Pencil, Trash2, X, Loader2, AlertCircle, Layers, Upload } from 'lucide-react';
 import { api } from '../../services/api';
+import SeoFields from '../../components/admin/SeoFields';
+import { useSeoSettings } from '../../context/SeoContext';
 
 const inputClass =
   'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
@@ -8,12 +10,18 @@ const inputClass =
 
 const labelClass = 'text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-soft';
 
-const EMPTY = { name: '', slug: '', tagline: '', description: '', banner: '' };
+const EMPTY = {
+  name: '', slug: '', tagline: '', description: '', banner: '',
+  // SEO — optional, blank falls back to the category's own content.
+  seoTitle: '', seoDescription: '', seoKeywords: '', canonicalUrl: '',
+  metaRobots: 'index, follow', ogTitle: '', ogDescription: '', ogImage: '', imageAltText: '',
+};
 
 const slugify = (value) =>
   value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export default function AdminCategories() {
+  const seoSettings = useSeoSettings();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -80,6 +88,15 @@ export default function AdminCategories() {
       tagline: cat.tagline || '',
       description: cat.description || '',
       banner: cat.banner || '',
+      seoTitle: cat.seo_title || cat.seoTitle || '',
+      seoDescription: cat.seo_description || cat.seoDescription || '',
+      seoKeywords: cat.seo_keywords || cat.seoKeywords || '',
+      canonicalUrl: cat.canonical_url || cat.canonicalUrl || '',
+      metaRobots: cat.meta_robots || cat.metaRobots || 'index, follow',
+      ogTitle: cat.og_title || cat.ogTitle || '',
+      ogDescription: cat.og_description || cat.ogDescription || '',
+      ogImage: cat.og_image || cat.ogImage || '',
+      imageAltText: cat.image_alt_text || cat.imageAltText || '',
     });
     setFormError('');
     setIsModalOpen(true);
@@ -96,6 +113,15 @@ export default function AdminCategories() {
       tagline: form.tagline.trim(),
       description: form.description.trim(),
       banner: form.banner,
+      seoTitle: form.seoTitle.trim(),
+      seoDescription: form.seoDescription.trim(),
+      seoKeywords: form.seoKeywords.trim(),
+      canonicalUrl: form.canonicalUrl.trim(),
+      metaRobots: form.metaRobots,
+      ogTitle: form.ogTitle.trim(),
+      ogDescription: form.ogDescription.trim(),
+      ogImage: form.ogImage.trim(),
+      imageAltText: form.imageAltText.trim(),
     };
 
     setSaving(true);
@@ -394,6 +420,17 @@ export default function AdminCategories() {
                   </div>
                 )}
               </div>
+
+              <SeoFields
+                entity="category"
+                value={form}
+                onChange={(patch) => setForm({ ...form, ...patch })}
+                name={form.name}
+                fallbackDescription={form.description || form.tagline}
+                fallbackImage={form.banner}
+                pathPrefix="/category"
+                settings={seoSettings}
+              />
 
               <div className="flex justify-end gap-3 pt-3 border-t border-line">
                 <button type="button" onClick={() => setIsModalOpen(false)}

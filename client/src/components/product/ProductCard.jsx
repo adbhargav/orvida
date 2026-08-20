@@ -54,8 +54,10 @@ export default function ProductCard({ product, onQuickView }) {
           {primaryImg && (
             <img
               src={primaryImg}
-              alt=""
+              alt={product.imageAltText || product.name}
               loading="lazy"
+              width="600"
+              height="750"
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-[900ms] ease-out ${
                 secondaryImg ? 'group-hover:opacity-0' : ''
               } group-hover:scale-[1.03]`}

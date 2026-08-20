@@ -7,11 +7,34 @@
  */
 
 export const SEO_DEFAULTS = {
+  // General
+  siteName: 'ORIVIDA',
+  titleTemplate: '%title% | %siteName%',
   metaTitle: 'ORIVIDA — Our Passion, UR Luxury | Premium Plants, Gifting & Décor',
   metaDescription:
     'ORIVIDA offers handcrafted botanical luxury, rare indoor plants, bespoke plant hampers, balcony makeovers, and authentic bell metal & ceramic decor — delivered across India.',
+  metaKeywords: '',
+  defaultRobots: 'index, follow',
+
+  // Social sharing
   ogImage: '',
-  titleSuffix: ' | ORIVIDA',
+  twitterImage: '',
+  twitterCardType: 'summary_large_image',
+
+  // Organization (feeds Organization/OnlineStore structured data)
+  organizationName: 'ORIVIDA',
+  organizationLogo: '/logo.png',
+  organizationDescription:
+    'Hand-nurtured rare botanicals, bespoke plant hampers and heritage Bastar bell metal craft, delivered across India.',
+  organizationPhone: '+91 70957 56434',
+  organizationEmail: 'support@orvida.com',
+  organizationAddress: '3-4-610/1, Narayanguda, Hyderabad, Telangana 500029, India',
+  organizationSocialLinks: '',
+
+  // Google integrations — blank means "not configured", nothing is injected.
+  googleSiteVerification: '',
+  googleAnalyticsId: '',
+  googleTagManagerId: '',
 };
 
 export const ANNOUNCEMENTS_DEFAULTS = {

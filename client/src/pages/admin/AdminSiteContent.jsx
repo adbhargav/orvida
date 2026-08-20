@@ -9,6 +9,7 @@ import {
   mergeContent,
 } from '../../config/siteContentDefaults';
 import { POLICIES } from '../../config/policyDefaults';
+import { GooglePreview, SocialPreview } from '../../components/admin/SeoFields';
 
 const inputClass =
   'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
@@ -215,63 +216,141 @@ export default function AdminSiteContent() {
       {/* SEO */}
       <SectionCard
         title="SEO — search & social"
-        description="The homepage title and description Google shows in results, plus the image used when the store is shared on WhatsApp, Facebook or X."
+        description="Global search settings: how the homepage appears in Google, what a shared link looks like, your business details for rich results, and Google integrations."
         onSave={() => save('seo_settings', seo)}
         saving={savingKey === 'seo_settings'}
         savedAt={savedKey === 'seo_settings'}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-8">
+          {/* General */}
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className={labelClass}>Meta title</label>
-              <input
-                type="text"
-                value={seo.metaTitle}
-                onChange={(e) => setSeo({ ...seo, metaTitle: e.target.value })}
-                className={inputClass}
-              />
-              <p className={`text-xs ${seo.metaTitle.length > 60 ? 'text-amber-700' : 'text-ink-faint'}`}>
-                {seo.metaTitle.length}/60 characters — Google truncates longer titles.
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className={labelClass}>Meta description</label>
-              <textarea
-                rows={3}
-                value={seo.metaDescription}
-                onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
-                className={`${inputClass} resize-y`}
-              />
-              <p className={`text-xs ${seo.metaDescription.length > 160 ? 'text-amber-700' : 'text-ink-faint'}`}>
-                {seo.metaDescription.length}/160 characters — aim for 150–160.
-              </p>
-            </div>
-
-            {/* Live preview of the Google result */}
-            <div className="p-4 rounded-md border border-line bg-white space-y-1">
-              <p className="type-eyebrow text-ink-faint">Google preview</p>
-              <p className="text-[13px] text-emerald-deep">orvida.in</p>
-              <p className="text-[#1a0dab] text-lg leading-snug truncate">{seo.metaTitle || 'Page title'}</p>
-              <p className="text-[13px] text-ink-soft line-clamp-2">
-                {seo.metaDescription || 'Page description shown under the title in search results.'}
-              </p>
+            <p className="type-eyebrow text-emerald-default">General</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Site name" value={seo.siteName}
+                onChange={(v) => setSeo({ ...seo, siteName: v })} placeholder="ORIVIDA" />
+              <div className="space-y-1.5">
+                <label className={labelClass}>Title template</label>
+                <input type="text" value={seo.titleTemplate}
+                  onChange={(e) => setSeo({ ...seo, titleTemplate: e.target.value })}
+                  className={inputClass} placeholder="%title% | %siteName%" />
+                <p className="text-xs text-ink-faint">
+                  %title% is the page or product name, %siteName% is your brand.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <ImageField
-              label="Social share image"
-              value={seo.ogImage}
-              aspect="aspect-[1200/630]"
-              hint="Shown when the site is shared — 1200×630 works best"
-              onChange={(v) => setSeo({ ...seo, ogImage: v })}
-            />
-            <p className="text-xs text-ink-faint leading-relaxed">
-              Product and collection pages generate their own titles, descriptions and structured
-              data automatically from the catalogue — this section covers the homepage and the
-              default social image.
+          {/* Homepage */}
+          <div className="space-y-4 pt-6 border-t border-line">
+            <p className="type-eyebrow text-emerald-default">Homepage</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Homepage SEO title</label>
+                  <input type="text" value={seo.metaTitle}
+                    onChange={(e) => setSeo({ ...seo, metaTitle: e.target.value })} className={inputClass} />
+                  <p className={`text-xs ${seo.metaTitle.length > 60 ? 'text-amber-700' : 'text-ink-faint'}`}>
+                    {seo.metaTitle.length}/60 characters — recommended 50–60.
+                  </p>
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Homepage meta description</label>
+                  <textarea rows={3} value={seo.metaDescription}
+                    onChange={(e) => setSeo({ ...seo, metaDescription: e.target.value })}
+                    className={`${inputClass} resize-y`} />
+                  <p className={`text-xs ${seo.metaDescription.length > 160 ? 'text-amber-700' : 'text-ink-faint'}`}>
+                    {seo.metaDescription.length}/160 characters — recommended 140–160.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <GooglePreview title={seo.metaTitle} description={seo.metaDescription} path="/" settings={seo} />
+                <p className="text-xs text-ink-faint leading-relaxed">
+                  Product and collection pages build their own titles and descriptions from the catalogue,
+                  and each can be overridden in its own SEO section.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Social sharing */}
+          <div className="space-y-4 pt-6 border-t border-line">
+            <p className="type-eyebrow text-emerald-default">Social sharing</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <ImageField label="Default share image" value={seo.ogImage} aspect="aspect-[1200/630]"
+                  hint="Used when a page has no image of its own — 1200×630"
+                  onChange={(v) => setSeo({ ...seo, ogImage: v })} />
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Twitter/X card type</label>
+                  <select value={seo.twitterCardType}
+                    onChange={(e) => setSeo({ ...seo, twitterCardType: e.target.value })} className={inputClass}>
+                    <option value="summary_large_image">Large image (recommended)</option>
+                    <option value="summary">Small summary</option>
+                  </select>
+                </div>
+              </div>
+              <SocialPreview title={seo.metaTitle} description={seo.metaDescription} image={seo.ogImage} settings={seo} />
+            </div>
+          </div>
+
+          {/* Organisation — powers Organization structured data */}
+          <div className="space-y-4 pt-6 border-t border-line">
+            <p className="type-eyebrow text-emerald-default">Organisation</p>
+            <p className="text-xs text-ink-faint">
+              Feeds the business information Google can show alongside your results.
             </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Organisation name" value={seo.organizationName}
+                onChange={(v) => setSeo({ ...seo, organizationName: v })} />
+              <ImageField label="Logo" value={seo.organizationLogo} aspect="aspect-square"
+                onChange={(v) => setSeo({ ...seo, organizationLogo: v })} />
+              <div className="sm:col-span-2">
+                <Field label="Description" textarea value={seo.organizationDescription}
+                  onChange={(v) => setSeo({ ...seo, organizationDescription: v })} />
+              </div>
+              <Field label="Phone" value={seo.organizationPhone}
+                onChange={(v) => setSeo({ ...seo, organizationPhone: v })} />
+              <Field label="Email" value={seo.organizationEmail}
+                onChange={(v) => setSeo({ ...seo, organizationEmail: v })} />
+              <div className="sm:col-span-2">
+                <Field label="Address" value={seo.organizationAddress}
+                  onChange={(v) => setSeo({ ...seo, organizationAddress: v })} />
+              </div>
+              <div className="sm:col-span-2">
+                <Field label="Social profiles" textarea value={seo.organizationSocialLinks}
+                  onChange={(v) => setSeo({ ...seo, organizationSocialLinks: v })}
+                  placeholder="One full URL per line — Instagram, Facebook, X…" />
+              </div>
+            </div>
+          </div>
+
+          {/* Google integrations */}
+          <div className="space-y-4 pt-6 border-t border-line">
+            <p className="type-eyebrow text-emerald-default">Google integrations</p>
+            <p className="text-xs text-ink-faint">
+              Left blank, nothing is loaded — no tracking scripts reach your visitors.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className={labelClass}>Search Console verification</label>
+                <input type="text" value={seo.googleSiteVerification}
+                  onChange={(e) => setSeo({ ...seo, googleSiteVerification: e.target.value })}
+                  className={inputClass} placeholder="Verification content value" />
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelClass}>Google Analytics 4 ID</label>
+                <input type="text" value={seo.googleAnalyticsId}
+                  onChange={(e) => setSeo({ ...seo, googleAnalyticsId: e.target.value })}
+                  className={inputClass} placeholder="G-XXXXXXXXXX" />
+              </div>
+              <div className="space-y-1.5">
+                <label className={labelClass}>Tag Manager ID</label>
+                <input type="text" value={seo.googleTagManagerId}
+                  onChange={(e) => setSeo({ ...seo, googleTagManagerId: e.target.value })}
+                  className={inputClass} placeholder="GTM-XXXXXXX" />
+              </div>
+            </div>
           </div>
         </div>
       </SectionCard>

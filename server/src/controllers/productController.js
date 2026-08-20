@@ -1,4 +1,5 @@
 import { query, pool } from '../config/db.js';
+import { collectSeoFields, uniqueSlug, recordSlugRedirect } from '../services/seoService.js';
 
 export const getProducts = async (req, res, next) => {
   try {
@@ -132,13 +133,19 @@ export const createProduct = async (req, res, next) => {
       shippingWeightKg, packageLengthCm, packageWidthCm, packageHeightCm
     } = req.body;
 
-    const generatedSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    // Slugs are the product's public URL, so uniqueness is enforced rather
+    // than left to a database error.
+    const generatedSlug = await uniqueSlug(client, 'products', slug || name);
+    const seo = collectSeoFields(req.body);
 
     const prodRes = await client.query(
-      `INSERT INTO products (name, slug, category_id, subcategory_id, price, discount_price, sku, stock, tags, is_featured, is_new, is_bestseller, short_description, description, care_instructions, craftsmanship_story, shipping_weight_kg, package_length_cm, package_width_cm, package_height_cm)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      `INSERT INTO products (name, slug, category_id, subcategory_id, price, discount_price, sku, stock, tags, is_featured, is_new, is_bestseller, short_description, description, care_instructions, craftsmanship_story, shipping_weight_kg, package_length_cm, package_width_cm, package_height_cm,
+                             seo_title, seo_description, seo_keywords, canonical_url, meta_robots, og_title, og_description, og_image, twitter_title, twitter_description, twitter_image, image_alt_text)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+               $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32)
        RETURNING *`,
-      [name, generatedSlug, categoryId, subcategoryId, price, discountPrice, sku, stock || 10, tags || [], isFeatured || false, isNew || false, isBestseller || false, shortDescription, description, careInstructions, craftsmanshipStory, shippingWeightKg ?? null, packageLengthCm ?? null, packageWidthCm ?? null, packageHeightCm ?? null]
+      [name, generatedSlug, categoryId, subcategoryId, price, discountPrice, sku, stock || 10, tags || [], isFeatured || false, isNew || false, isBestseller || false, shortDescription, description, careInstructions, craftsmanshipStory, shippingWeightKg ?? null, packageLengthCm ?? null, packageWidthCm ?? null, packageHeightCm ?? null,
+       seo.seoTitle, seo.seoDescription, seo.seoKeywords, seo.canonicalUrl, seo.metaRobots, seo.ogTitle, seo.ogDescription, seo.ogImage, seo.twitterTitle, seo.twitterDescription, seo.twitterImage, seo.imageAltText]
     );
 
     const newProduct = prodRes.rows[0];
@@ -172,11 +179,23 @@ export const updateProduct = async (req, res, next) => {
     await client.query('BEGIN');
     const { id } = req.params;
     const {
-      name, categoryId, subcategoryId, price, discountPrice, sku, stock, tags,
+      name, slug, categoryId, subcategoryId, price, discountPrice, sku, stock, tags,
       isFeatured, isNew, isBestseller, shortDescription, description,
       careInstructions, craftsmanshipStory, images,
       shippingWeightKg, packageLengthCm, packageWidthCm, packageHeightCm
     } = req.body;
+
+    const existing = await client.query('SELECT slug FROM products WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+    const previousSlug = existing.rows[0].slug;
+
+    // An edited slug changes a live URL, so the old one is preserved as a 301
+    // rather than left to 404.
+    const nextSlug = slug ? await uniqueSlug(client, 'products', slug, id) : previousSlug;
+    const seo = collectSeoFields(req.body);
 
     // Booleans and discount_price are assigned directly rather than through
     // COALESCE so an admin can actually turn a flag off or clear a discount.
@@ -201,17 +220,42 @@ export const updateProduct = async (req, res, next) => {
               package_length_cm = COALESCE($17, package_length_cm),
               package_width_cm = COALESCE($18, package_width_cm),
               package_height_cm = COALESCE($19, package_height_cm),
+              slug = $20,
+              seo_title = $21,
+              seo_description = $22,
+              seo_keywords = $23,
+              canonical_url = $24,
+              meta_robots = $25,
+              og_title = $26,
+              og_description = $27,
+              og_image = $28,
+              twitter_title = $29,
+              twitter_description = $30,
+              twitter_image = $31,
+              image_alt_text = $32,
               updated_at = CURRENT_TIMESTAMP
-        WHERE id = $20
+        WHERE id = $33
         RETURNING *`,
       [
         name, categoryId, subcategoryId ?? null, price, discountPrice ?? null, sku, stock, tags,
         isFeatured, isNew, isBestseller, shortDescription, description,
         careInstructions, craftsmanshipStory,
         shippingWeightKg ?? null, packageLengthCm ?? null, packageWidthCm ?? null, packageHeightCm ?? null,
+        nextSlug,
+        seo.seoTitle, seo.seoDescription, seo.seoKeywords, seo.canonicalUrl, seo.metaRobots,
+        seo.ogTitle, seo.ogDescription, seo.ogImage,
+        seo.twitterTitle, seo.twitterDescription, seo.twitterImage, seo.imageAltText,
         id
       ]
     );
+
+    await recordSlugRedirect(client, {
+      prefix: '/product',
+      oldSlug: previousSlug,
+      newSlug: nextSlug,
+      entityType: 'product',
+      entityId: Number(id),
+    });
 
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');

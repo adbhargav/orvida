@@ -1,4 +1,5 @@
 import { query } from '../config/db.js';
+import { collectSeoFields, recordSlugRedirect, slugify as seoSlugify } from '../services/seoService.js';
 
 export const getCategories = async (req, res, next) => {
   try {
@@ -55,11 +56,16 @@ export const createCategory = async (req, res, next) => {
     const { name, slug, tagline, banner, description } = req.body;
     const catSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
+    const seo = collectSeoFields(req.body);
     const result = await query(
-      `INSERT INTO categories (name, slug, tagline, banner, description)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO categories (name, slug, tagline, banner, description,
+                               seo_title, seo_description, seo_keywords, canonical_url, meta_robots,
+                               og_title, og_description, og_image, image_alt_text)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
-      [name, catSlug, tagline, banner, description]
+      [name, catSlug, tagline, banner, description,
+       seo.seoTitle, seo.seoDescription, seo.seoKeywords, seo.canonicalUrl, seo.metaRobots,
+       seo.ogTitle, seo.ogDescription, seo.ogImage, seo.imageAltText]
     );
 
     res.status(201).json({ success: true, category: result.rows[0] });
@@ -72,19 +78,41 @@ export const updateCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, slug, tagline, banner, description } = req.body;
-    const catSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+    const existing = await query('SELECT slug FROM categories WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Category not found' });
+    }
+    const previousSlug = existing.rows[0].slug;
+    const catSlug = seoSlugify(slug || name) || previousSlug;
+    const seo = collectSeoFields(req.body);
 
     const result = await query(
       `UPDATE categories
-       SET name = $1, slug = $2, tagline = $3, banner = $4, description = $5
-       WHERE id = $6
+       SET name = $1, slug = $2, tagline = $3, banner = $4, description = $5,
+           seo_title = $6, seo_description = $7, seo_keywords = $8, canonical_url = $9,
+           meta_robots = $10, og_title = $11, og_description = $12, og_image = $13,
+           image_alt_text = $14, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $15
        RETURNING *`,
-      [name, catSlug, tagline, banner, description, id]
+      [name, catSlug, tagline, banner, description,
+       seo.seoTitle, seo.seoDescription, seo.seoKeywords, seo.canonicalUrl, seo.metaRobots,
+       seo.ogTitle, seo.ogDescription, seo.ogImage, seo.imageAltText, id]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
+
+    // Category URLs are linked from the navigation and indexed, so a renamed
+    // slug leaves a 301 behind.
+    await recordSlugRedirect({ query: (text, params) => query(text, params) }, {
+      prefix: '/category',
+      oldSlug: previousSlug,
+      newSlug: catSlug,
+      entityType: 'category',
+      entityId: Number(id),
+    });
 
     res.json({ success: true, category: result.rows[0] });
   } catch (error) {

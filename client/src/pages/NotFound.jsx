@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import usePageMeta from '../hooks/usePageMeta';
+import useRedirectFallback from '../hooks/useRedirectFallback';
 
 const SUGGESTIONS = [
   { label: 'Plants', to: '/category/plants' },
@@ -12,6 +13,10 @@ const SUGGESTIONS = [
 
 export default function NotFound() {
   usePageMeta({ title: 'Page Not Found | ORIVIDA', path: '/404', robots: 'noindex, follow' });
+
+  // An indexed URL that has since moved should still reach its destination.
+  const redirecting = useRedirectFallback(true);
+  if (redirecting) return null;
 
   return (
     <div className="min-h-[70vh] bg-canvas flex items-center justify-center px-6 py-20">

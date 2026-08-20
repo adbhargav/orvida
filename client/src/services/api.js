@@ -139,6 +139,20 @@ export const normalizeProduct = (row) => {
     images,
     variants,
     reviews: row.reviews || [],
+    // SEO overrides. Null/empty means "fall back at render time", which is
+    // what lets an admin take over any field later.
+    seoTitle: pick(row, 'seoTitle', 'seo_title') || '',
+    seoDescription: pick(row, 'seoDescription', 'seo_description') || '',
+    seoKeywords: pick(row, 'seoKeywords', 'seo_keywords') || '',
+    canonicalUrl: pick(row, 'canonicalUrl', 'canonical_url') || '',
+    metaRobots: pick(row, 'metaRobots', 'meta_robots') || '',
+    ogTitle: pick(row, 'ogTitle', 'og_title') || '',
+    ogDescription: pick(row, 'ogDescription', 'og_description') || '',
+    ogImage: pick(row, 'ogImage', 'og_image') || '',
+    twitterTitle: pick(row, 'twitterTitle', 'twitter_title') || '',
+    twitterDescription: pick(row, 'twitterDescription', 'twitter_description') || '',
+    twitterImage: pick(row, 'twitterImage', 'twitter_image') || '',
+    imageAltText: pick(row, 'imageAltText', 'image_alt_text') || '',
     // Final packed-parcel figures for courier rating (not raw product size).
     shippingWeightKg: toNumber(pick(row, 'shippingWeightKg', 'shipping_weight_kg')),
     packageLengthCm: toNumber(pick(row, 'packageLengthCm', 'package_length_cm')),
@@ -151,9 +165,23 @@ export const normalizeCategory = (row) => {
   if (!row) return row;
   return {
     ...row,
+    seoTitle: pick(row, 'seoTitle', 'seo_title') || '',
+    seoDescription: pick(row, 'seoDescription', 'seo_description') || '',
+    seoKeywords: pick(row, 'seoKeywords', 'seo_keywords') || '',
+    canonicalUrl: pick(row, 'canonicalUrl', 'canonical_url') || '',
+    metaRobots: pick(row, 'metaRobots', 'meta_robots') || '',
+    ogTitle: pick(row, 'ogTitle', 'og_title') || '',
+    ogDescription: pick(row, 'ogDescription', 'og_description') || '',
+    ogImage: pick(row, 'ogImage', 'og_image') || '',
+    imageAltText: pick(row, 'imageAltText', 'image_alt_text') || '',
     subcategories: (row.subcategories || []).map((sub) => ({
       ...sub,
       count: toNumber(sub.count) ?? 0,
+      seoTitle: pick(sub, 'seoTitle', 'seo_title') || '',
+      seoDescription: pick(sub, 'seoDescription', 'seo_description') || '',
+      metaRobots: pick(sub, 'metaRobots', 'meta_robots') || '',
+      ogImage: pick(sub, 'ogImage', 'og_image') || '',
+      imageAltText: pick(sub, 'imageAltText', 'image_alt_text') || '',
     })),
   };
 };
@@ -251,6 +279,21 @@ export const api = {
       request(`/categories/subcategories/${id}`, { method: 'PUT', body: data, auth: true }),
     removeSubcategory: (id) =>
       request(`/categories/subcategories/${id}`, { method: 'DELETE', auth: true }),
+  },
+
+  seo: {
+    // Public: resolve a renamed URL before the storefront shows a 404.
+    resolveRedirect: (path) => request(`/seo/redirect?path=${encodeURIComponent(path)}`),
+
+    audit: () => request('/seo/admin/audit', { auth: true }),
+    listProducts: (missing) =>
+      request(`/seo/admin/products${missing ? `?missing=${encodeURIComponent(missing)}` : ''}`, { auth: true }),
+    bulk: (action, productIds) =>
+      request('/seo/admin/bulk', { method: 'POST', body: { action, productIds }, auth: true }),
+    listRedirects: () => request('/seo/admin/redirects', { auth: true }),
+    createRedirect: (source, destination, statusCode = 301) =>
+      request('/seo/admin/redirects', { method: 'POST', body: { source, destination, statusCode }, auth: true }),
+    removeRedirect: (id) => request(`/seo/admin/redirects/${id}`, { method: 'DELETE', auth: true }),
   },
 
   content: {

@@ -134,3 +134,52 @@ CREATE TABLE IF NOT EXISTS uploads (
   size_bytes INT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 13. SEO. Per-entity overrides live on the entities themselves (a separate
+--     SEO table would mean a join on every catalogue read); global settings
+--     stay in site_content under the 'seo_settings' key. Everything is
+--     nullable: empty means "fall back at render time", so an admin can
+--     always take over a value later without a migration.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_title VARCHAR(255);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_description TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS seo_keywords TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS canonical_url TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS meta_robots VARCHAR(40);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS og_title VARCHAR(255);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS og_description TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS og_image TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS twitter_title VARCHAR(255);
+ALTER TABLE products ADD COLUMN IF NOT EXISTS twitter_description TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS twitter_image TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS image_alt_text VARCHAR(255);
+
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS seo_title VARCHAR(255);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS seo_description TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS seo_keywords TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS canonical_url TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS meta_robots VARCHAR(40);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS og_title VARCHAR(255);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS og_description TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS og_image TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_alt_text VARCHAR(255);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS seo_title VARCHAR(255);
+ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS seo_description TEXT;
+ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS meta_robots VARCHAR(40);
+ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS og_image TEXT;
+ALTER TABLE subcategories ADD COLUMN IF NOT EXISTS image_alt_text VARCHAR(255);
+
+-- Slug changes must not break inbound links or lose accumulated ranking.
+CREATE TABLE IF NOT EXISTS redirects (
+  id SERIAL PRIMARY KEY,
+  source TEXT UNIQUE NOT NULL,             -- path only, e.g. /product/old-slug
+  destination TEXT NOT NULL,
+  status_code SMALLINT DEFAULT 301,
+  entity_type VARCHAR(30),                 -- product, category, subcategory, manual
+  entity_id INT,
+  hits INT DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_redirects_source ON redirects(source);

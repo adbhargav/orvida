@@ -31,6 +31,7 @@ import shippingRoutes from './routes/shippingRoutes.js';
 import contentRoutes from './routes/contentRoutes.js';
 import { handleRazorpayWebhook } from './controllers/paymentController.js';
 import { getSitemap, getRobots } from './controllers/seoController.js';
+import seoRoutes from './routes/seoRoutes.js';
 
 dotenv.config();
 
@@ -156,6 +157,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/seo', seoRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/reviews', reviewRoutes);
