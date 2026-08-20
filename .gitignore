@@ -27,7 +27,6 @@ firebase-base64-for-render.txt
 server/uploads/*
 !server/uploads/.gitkeep
 
-
 # Editor directories
 .vscode/*
 !.vscode/extensions.json
