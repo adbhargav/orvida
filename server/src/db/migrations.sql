@@ -183,3 +183,70 @@ CREATE TABLE IF NOT EXISTS redirects (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_redirects_source ON redirects(source);
+
+-- 14. SEO landing pages. Editorial pages that live at a top-level slug
+--     (/gold-jewellery) and carry their own metadata, content and schema.
+--     Scheduling is resolved by comparing scheduled_at to now rather than by
+--     a background job, so a page goes live on time without a scheduler.
+CREATE TABLE IF NOT EXISTS seo_pages (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  status VARCHAR(20) DEFAULT 'draft',          -- draft, published, scheduled
+  template VARCHAR(60),
+
+  -- Page content
+  h1 VARCHAR(255),
+  intro TEXT,
+  content TEXT,
+  faqs JSONB DEFAULT '[]'::jsonb,              -- [{ question, answer }]
+  cta JSONB DEFAULT '{}'::jsonb,               -- { heading, text, buttonText, buttonUrl }
+  internal_links JSONB DEFAULT '[]'::jsonb,    -- [{ text, url }]
+  breadcrumbs JSONB DEFAULT '[]'::jsonb,       -- [{ label, url }]
+
+  -- Search metadata
+  seo_title VARCHAR(255),
+  meta_description TEXT,
+  focus_keyword VARCHAR(255),
+  secondary_keywords TEXT,
+  seo_keywords TEXT,
+  canonical_url TEXT,
+
+  -- Imagery and social cards
+  featured_image TEXT,
+  image_alt_text VARCHAR(255),
+  og_title VARCHAR(255),
+  og_description TEXT,
+  og_image TEXT,
+  twitter_title VARCHAR(255),
+  twitter_description TEXT,
+  twitter_image TEXT,
+
+  -- Crawling
+  robots_index BOOLEAN DEFAULT TRUE,
+  robots_follow BOOLEAN DEFAULT TRUE,
+  include_in_sitemap BOOLEAN DEFAULT TRUE,
+  sitemap_priority NUMERIC(2, 1) DEFAULT 0.7,
+  sitemap_changefreq VARCHAR(20) DEFAULT 'monthly',
+  schema_type VARCHAR(40) DEFAULT 'WebPage',
+
+  published_at TIMESTAMP WITH TIME ZONE,
+  scheduled_at TIMESTAMP WITH TIME ZONE,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_seo_pages_status ON seo_pages(status);
+CREATE INDEX IF NOT EXISTS idx_seo_pages_scheduled ON seo_pages(scheduled_at) WHERE status = 'scheduled';
+
+-- Reusable starting points for new landing pages.
+CREATE TABLE IF NOT EXISTS seo_page_templates (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  description TEXT,
+  defaults JSONB NOT NULL DEFAULT '{}'::jsonb,
+  is_builtin BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

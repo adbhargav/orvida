@@ -294,6 +294,31 @@ export const api = {
     createRedirect: (source, destination, statusCode = 301) =>
       request('/seo/admin/redirects', { method: 'POST', body: { source, destination, statusCode }, auth: true }),
     removeRedirect: (id) => request(`/seo/admin/redirects/${id}`, { method: 'DELETE', auth: true }),
+
+    /* SEO landing pages */
+    // Public — the API only serves pages that are actually live.
+    getPage: (slug) => request(`/seo/pages/${encodeURIComponent(slug)}`),
+    listLivePages: () => request('/seo/pages'),
+
+    pageStats: () => request('/seo/admin/pages/stats', { auth: true }),
+    listPages: (params = {}) => {
+      const q = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v !== undefined && v !== null)
+      ).toString();
+      return request(`/seo/admin/pages${q ? `?${q}` : ''}`, { auth: true });
+    },
+    getPageAdmin: (id) => request(`/seo/admin/pages/${id}`, { auth: true }),
+    createPage: (data) => request('/seo/admin/pages', { method: 'POST', body: data, auth: true }),
+    updatePage: (id, data) => request(`/seo/admin/pages/${id}`, { method: 'PUT', body: data, auth: true }),
+    duplicatePage: (id) => request(`/seo/admin/pages/${id}/duplicate`, { method: 'POST', auth: true }),
+    removePage: (id) => request(`/seo/admin/pages/${id}`, { method: 'DELETE', auth: true }),
+    bulkPages: (action, ids) =>
+      request('/seo/admin/pages/bulk', { method: 'POST', body: { action, ids }, auth: true }),
+
+    listTemplates: () => request('/seo/admin/pages/templates', { auth: true }),
+    saveTemplate: (name, description, defaults) =>
+      request('/seo/admin/pages/templates', { method: 'POST', body: { name, description, defaults }, auth: true }),
+    removeTemplate: (id) => request(`/seo/admin/pages/templates/${id}`, { method: 'DELETE', auth: true }),
   },
 
   content: {

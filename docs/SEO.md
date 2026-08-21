@@ -224,3 +224,76 @@ If per-product link previews on social platforms become important, the fix is
 prerendering or a Next.js migration — a deliberate project, not a patch. The
 database, utilities and admin UI built here would carry over unchanged, since
 none of the SEO logic is coupled to the rendering strategy.
+
+---
+
+## 13. SEO landing pages
+
+Standalone pages at a top-level slug (`/rare-indoor-plants`) that target
+searches the catalogue cannot reach. Managed under **Admin → SEO Management →
+Landing Pages**.
+
+### Data model
+
+`seo_pages` holds content (h1, intro, body, FAQs, CTA), search metadata,
+social cards, robots/sitemap flags, schema type, scheduling and authorship.
+Repeating structures (FAQs, internal links, breadcrumbs) are JSONB rather than
+child tables, because they are only ever read with their page.
+`seo_page_templates` holds reusable starting points.
+
+### Statuses and scheduling
+
+- **Draft** — invisible to the public API and the sitemap.
+- **Published** — live.
+- **Scheduled** — live automatically once `scheduled_at` passes.
+
+Scheduling needs no cron: the public query treats a page as live when
+`status = 'published' OR (status = 'scheduled' AND scheduled_at <= NOW())`.
+A tidy-up query then promotes due rows so the admin list reads correctly.
+That means a scheduled page appears on time even if nothing is running.
+
+### The editor
+
+Five tabs — Content, Search, Social, Links & FAQ, Advanced — with a permanent
+right rail showing the live SEO score, warnings, Google preview, social
+preview and a checklist. The slug follows the page name until an admin edits
+it, and leaving with unsaved changes prompts first.
+
+### SEO score
+
+`client/src/lib/seoScore.js`, weighted across sixteen checks (title and its
+length, description and its length, focus keyword and its presence in the
+title and H1, content length, H1, image, alt text, internal links, sitemap,
+indexability, schema validity). It measures completeness — it does not
+predict rankings, and the UI says so.
+
+### Publishing safety
+
+Warnings never block publishing: a published page with no title, a noindex
+page, thin content, FAQ schema without questions, or a scheduled page with no
+date are all surfaced but permitted.
+
+### URLs and redirects
+
+Renaming a **published** page's slug records a 301 in the existing `redirects`
+table, so inbound links keep working; the storefront follows it before
+rendering a 404. Draft renames record nothing, since nothing was public.
+
+### Sitemap
+
+Only pages that are live, `include_in_sitemap`, and `robots_index` appear —
+carrying their own priority and change frequency.
+
+### Route precedence
+
+The public route is `/:slug`, declared last. React Router ranks static routes
+above dynamic ones, so `/cart`, `/about` and every existing page keep winning;
+this was verified explicitly.
+
+### Permissions
+
+This application authenticates with a JWT carrying a single `is_admin` claim —
+there is no roles/permissions table. Every landing-page route therefore sits
+behind `authenticateToken + requireAdmin`, exactly like every other admin
+feature. Granular permissions (SEO_VIEW, SEO_PUBLISH, …) would require
+introducing an RBAC system, which is a separate piece of work.

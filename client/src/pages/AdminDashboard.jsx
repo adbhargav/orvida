@@ -15,6 +15,7 @@ import AdminEnquiries from './admin/AdminEnquiries';
 import AdminNewsletter from './admin/AdminNewsletter';
 import AdminSiteContent from './admin/AdminSiteContent';
 import AdminSeo from './admin/AdminSeo';
+import AdminSeoPages from './admin/AdminSeoPages';
 
 const PANELS = {
   overview: AdminOverview,
@@ -30,6 +31,10 @@ const PANELS = {
   newsletter: AdminNewsletter,
   content: AdminSiteContent,
   seo: AdminSeo,
+  'seo-pages': AdminSeoPages,
+  // The SEO settings tab reuses the site-content panel, filtered to its own
+  // section rather than duplicated.
+  'seo-settings': () => <AdminSiteContent only="seo" />,
 };
 
 export default function AdminDashboard() {
@@ -49,7 +54,7 @@ export default function AdminDashboard() {
     <div className="flex h-screen overflow-hidden bg-canvas text-ink font-body">
       <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onLogout={logout} />
       <main className="flex-1 overflow-y-auto h-full">
-        <ActivePanel />
+        <ActivePanel onNavigate={setActiveTab} />
       </main>
     </div>
   );

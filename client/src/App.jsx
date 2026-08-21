@@ -27,6 +27,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const About = lazy(() => import('./pages/About'));
 const GiftingConcierge = lazy(() => import('./pages/GiftingConcierge'));
 const PolicyPage = lazy(() => import('./pages/PolicyPage'));
+const SeoLandingPage = lazy(() => import('./pages/SeoLandingPage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function ScrollToTop() {
@@ -74,6 +75,10 @@ function AppContent() {
             <Route path="/about" element={<About />} />
             <Route path="/policies/:slug" element={<PolicyPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            {/* SEO landing pages own the remaining single-segment slugs.
+                React Router ranks the static routes above this, so it can
+                never shadow /cart, /about and friends. */}
+            <Route path="/:slug" element={<SeoLandingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

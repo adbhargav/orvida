@@ -1,4 +1,5 @@
 import { query, pool } from '../config/db.js';
+import { LIVE_CONDITION, promoteDuePages } from './seoPageController.js';
 import {
   SITE_URL,
   slugify,
@@ -91,6 +92,26 @@ export const getSitemap = async (req, res, next) => {
         );
       }
       if (batch.rows.length < BATCH) break;
+    }
+
+    // Landing pages: live, indexable and sitemap-enabled only. Drafts and
+    // pending schedules are excluded by LIVE_CONDITION.
+    await promoteDuePages();
+    const landingPages = await query(
+      `SELECT slug, updated_at, sitemap_priority, sitemap_changefreq
+         FROM seo_pages
+        WHERE ${LIVE_CONDITION} AND include_in_sitemap = TRUE AND robots_index = TRUE
+        ORDER BY id`
+    );
+    for (const p of landingPages.rows) {
+      entries.push(
+        urlEntry({
+          loc: `${SITE_URL}/${p.slug}`,
+          lastmod: p.updated_at,
+          changefreq: p.sitemap_changefreq || 'monthly',
+          priority: p.sitemap_priority != null ? Number(p.sitemap_priority).toFixed(1) : '0.7',
+        })
+      );
     }
 
     res.set('Content-Type', 'application/xml; charset=utf-8');

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, Loader2, AlertCircle, Check, ExternalLink, Wand2, ArrowRight, Trash2, Plus,
+  Globe, FileEdit, Clock,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { SITE_URL } from '../../lib/seo';
+import { scoreFromRow, scoreBandTone } from '../../lib/seoScore';
 
 const inputClass =
   'w-full px-3.5 py-2.5 rounded-md border border-line bg-white text-sm text-ink placeholder:text-ink-faint ' +
@@ -21,7 +23,7 @@ const BULK_ACTIONS = [
   { action: 'slug', label: 'Generate missing URL slugs', detail: 'Only for products without a slug.' },
 ];
 
-export default function AdminSeo() {
+export default function AdminSeo({ onNavigate }) {
   const [audit, setAudit] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,6 +34,7 @@ export default function AdminSeo() {
   const [missingList, setMissingList] = useState([]);
   const [listLoading, setListLoading] = useState(false);
 
+  const [pageStats, setPageStats] = useState(null);
   const [redirects, setRedirects] = useState([]);
   const [redirectForm, setRedirectForm] = useState({ source: '', destination: '' });
   const [redirectError, setRedirectError] = useState('');
@@ -45,12 +48,14 @@ export default function AdminSeo() {
     setLoading(true);
     setError('');
     try {
-      const [auditRes, redirectRes] = await Promise.all([
+      const [auditRes, redirectRes, pageRes] = await Promise.all([
         api.seo.audit(),
         api.seo.listRedirects().catch(() => ({ redirects: [] })),
+        api.seo.pageStats().catch(() => null),
       ]);
       setAudit(auditRes);
       setRedirects(redirectRes.redirects || []);
+      setPageStats(pageRes);
     } catch (err) {
       setError(err.message || 'Could not load the SEO report.');
     } finally {
@@ -199,6 +204,122 @@ export default function AdminSeo() {
               </ul>
             </div>
           </section>
+
+          {/* Landing pages */}
+          {pageStats && (
+            <section className="surface-card rounded-lg p-6 sm:p-8 space-y-5">
+              <div className="flex flex-wrap justify-between items-end gap-4">
+                <div className="space-y-1">
+                  <h2 className="type-heading text-xl text-ink flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-emerald-default" /> Landing pages
+                  </h2>
+                  <p className="text-sm text-ink-soft">
+                    Standalone pages built to rank for searches your catalogue cannot reach.
+                  </p>
+                </div>
+                <button
+                  onClick={() => onNavigate?.('seo-pages')}
+                  className="inline-flex items-center gap-1.5 text-sm text-emerald-default link-underline"
+                >
+                  Manage pages <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Total', value: pageStats.stats.total, icon: Globe },
+                  { label: 'Published', value: pageStats.stats.published, icon: Globe },
+                  { label: 'Drafts', value: pageStats.stats.draft, icon: FileEdit },
+                  { label: 'Scheduled', value: pageStats.stats.scheduled, icon: Clock },
+                ].map(({ label, value, icon: Icon }) => (
+                  <div key={label} className="p-4 rounded-md border border-line space-y-1">
+                    <span className="type-eyebrow text-ink-faint flex items-center gap-1.5">
+                      <Icon className="w-3 h-3" /> {label}
+                    </span>
+                    <p className="type-price text-2xl text-ink">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {(pageStats.stats.missing_title > 0 ||
+                pageStats.stats.missing_description > 0 ||
+                pageStats.stats.missing_keyword > 0 ||
+                pageStats.stats.published_without_seo > 0) && (
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { n: pageStats.stats.missing_title, label: 'missing an SEO title' },
+                    { n: pageStats.stats.missing_description, label: 'missing a meta description' },
+                    { n: pageStats.stats.missing_keyword, label: 'missing a focus keyword' },
+                    { n: pageStats.stats.published_without_seo, label: 'published without SEO', urgent: true },
+                  ]
+                    .filter((x) => x.n > 0)
+                    .map((x) => (
+                      <span
+                        key={x.label}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs ${
+                          x.urgent ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'
+                        }`}
+                      >
+                        <AlertCircle className="w-3 h-3" /> {x.n} {x.label}
+                      </span>
+                    ))}
+                </div>
+              )}
+
+              {pageStats.recent.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[620px]">
+                    <thead className="text-left">
+                      <tr className="type-eyebrow text-ink-faint border-b border-line">
+                        <th className="pb-2 pr-4">Page</th>
+                        <th className="pb-2 pr-4">SEO title</th>
+                        <th className="pb-2 pr-4">Score</th>
+                        <th className="pb-2 pr-4">Status</th>
+                        <th className="pb-2">Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                      {pageStats.recent.map((row) => {
+                        const { score, band } = scoreFromRow(row);
+                        return (
+                          <tr key={row.id}>
+                            <td className="py-2.5 pr-4">
+                              <button
+                                onClick={() => onNavigate?.('seo-pages')}
+                                className="text-ink hover:text-emerald-default transition text-left"
+                              >
+                                {row.name}
+                              </button>
+                              <span className="block text-xs text-ink-faint font-mono">/{row.slug}</span>
+                            </td>
+                            <td className="py-2.5 pr-4 text-ink-soft max-w-[16rem] truncate">
+                              {row.seo_title || <span className="text-amber-700">Not set</span>}
+                            </td>
+                            <td className="py-2.5 pr-4 whitespace-nowrap">
+                              <span className={scoreBandTone(score)}>{score}</span>
+                              <span className="text-xs text-ink-faint"> - {band}</span>
+                            </td>
+                            <td className="py-2.5 pr-4">
+                              <span className={`px-2.5 py-1 rounded-full text-xs ${
+                                row.status === 'published' ? 'bg-emerald-light text-emerald-deep'
+                                  : row.status === 'scheduled' ? 'bg-sky-50 text-sky-800'
+                                  : 'bg-amber-50 text-amber-800'
+                              }`}>
+                                {row.status}
+                              </span>
+                            </td>
+                            <td className="py-2.5 text-xs text-ink-soft whitespace-nowrap">
+                              {new Date(row.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Bulk fixes */}
           <section className="surface-card rounded-lg p-6 sm:p-8 space-y-4">

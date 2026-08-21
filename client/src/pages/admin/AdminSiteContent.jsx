@@ -97,7 +97,11 @@ function SectionCard({ title, description, children, onSave, saving, savedAt }) 
   );
 }
 
-export default function AdminSiteContent() {
+export default function AdminSiteContent({ only = null }) {
+  // `only="seo"` mounts just the SEO settings under SEO Management, so the
+  // same component serves both tabs instead of being copied.
+  const shows = (section) => !only || only === section;
+
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [banner, setBanner] = useState(null);
@@ -189,10 +193,16 @@ export default function AdminSiteContent() {
   return (
     <div className="min-h-screen bg-canvas p-6 sm:p-10 space-y-8">
       <header className="space-y-1.5 border-b border-line pb-6">
-        <span className="type-eyebrow text-emerald-default">Storefront copy</span>
-        <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">Site content</h1>
+        <span className="type-eyebrow text-emerald-default">
+          {only === 'seo' ? 'Search defaults' : 'Storefront copy'}
+        </span>
+        <h1 className="type-display text-3xl sm:text-[2.5rem] text-ink">
+          {only === 'seo' ? 'SEO settings' : 'Site content'}
+        </h1>
         <p className="text-sm text-ink-soft">
-          Edit the homepage brand story and the Our Story page. Saved changes go live immediately.
+          {only === 'seo'
+            ? 'Defaults every page falls back to when it has no SEO values of its own.'
+            : 'Edit the homepage brand story and the Our Story page. Saved changes go live immediately.'}
         </p>
       </header>
 
@@ -213,7 +223,7 @@ export default function AdminSiteContent() {
         </div>
       )}
 
-      {/* SEO */}
+      {shows('seo') && (
       <SectionCard
         title="SEO — search & social"
         description="Global search settings: how the homepage appears in Google, what a shared link looks like, your business details for rich results, and Google integrations."
@@ -355,7 +365,9 @@ export default function AdminSiteContent() {
         </div>
       </SectionCard>
 
-      {/* Announcement bar */}
+      )}
+
+      {shows('content') && (
       <SectionCard
         title="Announcement bar"
         description="The rotating messages in the green strip at the very top of the store. One message per line; they rotate every few seconds."
@@ -379,7 +391,9 @@ export default function AdminSiteContent() {
         </div>
       </SectionCard>
 
-      {/* Homepage brand story */}
+      )}
+
+      {shows('content') && (
       <SectionCard
         title="Homepage — Brand story"
         description="The “Where botanical passion…” section with its side image."
@@ -409,7 +423,9 @@ export default function AdminSiteContent() {
         </div>
       </SectionCard>
 
-      {/* Our Story page */}
+      )}
+
+      {shows('content') && (
       <SectionCard
         title="Our Story page"
         description="Everything on /about — hero, pillars, craft section, milestones and the closing call-to-action."
@@ -502,8 +518,9 @@ export default function AdminSiteContent() {
         </div>
       </SectionCard>
 
-      {/* Policies */}
-      {Object.entries(policies).map(([slug, policy]) => (
+      )}
+
+      {shows('content') && Object.entries(policies).map(([slug, policy]) => (
         <SectionCard
           key={slug}
           title={policy.title}
