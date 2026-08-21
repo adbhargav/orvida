@@ -133,7 +133,12 @@ export default function SeoLandingPage() {
             { name: page.h1 || page.name },
           ]),
         }
-      : { title: 'ORIVIDA', robots: 'noindex, follow' }
+      : {
+          // An unknown slug is a real 404: say so in the title bar, not just
+          // in the body.
+          title: notFound ? 'Page Not Found | ORIVIDA' : 'ORIVIDA',
+          robots: 'noindex, follow',
+        }
   );
 
   if (loading || redirecting) {
