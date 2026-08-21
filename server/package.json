@@ -11,7 +11,8 @@
     "db:migrate": "node src/db/migrate.js",
     "db:sync-sequences": "node src/db/syncSequences.js",
     "test:webhook": "node src/db/testWebhook.js",
-    "seo:audit": "node src/db/seoAudit.js"
+    "seo:audit": "node src/db/seoAudit.js",
+    "seo:canonicalise": "node src/db/canonicaliseDuplicates.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

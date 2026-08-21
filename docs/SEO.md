@@ -363,3 +363,49 @@ showing a 404. Draft renames record nothing, since nothing was public.
 
 `/blog` and `/blog/:slug` are declared above the catch-all `/:slug`, so a
 landing page can never take the blog's URLs.
+
+---
+
+## 15. Duplicate listings
+
+The catalogue import created one product row per price variant, so a single
+item could occupy two dozen URLs with an identical name and description —
+268 of 352 products sat in such a group. Search engines read those as
+competing duplicates, pick one arbitrarily, and scatter the ranking signals
+the group earned.
+
+```bash
+cd server && npm run seo:canonicalise -- --dry-run   # show the groups
+cd server && npm run seo:canonicalise                # apply
+cd server && npm run seo:canonicalise -- --undo      # reverse
+```
+
+Every duplicate's `canonical_url` points at the lowest-priced member of its
+group; the keeper carries no override, so the group never chains. Nothing is
+deleted — every variant still resolves, shows its own price and is
+purchasable. Only the instruction to search engines changes.
+
+The sitemap skips any product that canonicalises elsewhere, since advertising
+a page the site itself calls a duplicate contradicts the declaration. `npm run
+seo:audit` checks for dangling targets, chains and sitemap leaks.
+
+**Re-run this after any catalogue import.** The right long-term fix is real
+product variants — one page with selectable options — which would make the
+consolidation unnecessary.
+
+---
+
+## 16. camelCase at the boundary
+
+The API returns snake_case rows; the generators in `client/src/lib/seo.js`
+read camelCase. That mismatch meant `product.seoTitle` was quietly `undefined`
+for every row the server sent, so **no admin SEO override ever reached a
+page** — titles, descriptions, canonicals, robots and social cards all fell
+through to their defaults, and the fallbacks made it look like it worked.
+Breadcrumbs lost their category trail for the same reason, and `meta_robots`
+was ignored, so a product marked noindex still rendered `index, follow`.
+
+`normaliseEntity` now maps snake_case onto camelCase before any generator
+reads an entity, accepting both spellings. If you add an SEO field, no
+renaming is needed at the boundary — but do confirm the value actually
+appears in the rendered `<head>`, not just in the database.

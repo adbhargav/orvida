@@ -81,11 +81,14 @@ export const getSitemap = async (req, res, next) => {
     // Batched so a large catalogue never sits in memory all at once.
     const BATCH = 1000;
     for (let offset = 0; ; offset += BATCH) {
+      // A page that canonicalises elsewhere is a duplicate by the site's own
+      // declaration, so advertising it here would contradict that.
       const batch = await query(
         `SELECT slug, updated_at FROM products
           WHERE ${INDEXABLE}
+            AND (canonical_url IS NULL OR canonical_url = $3 || '/product/' || slug)
           ORDER BY id LIMIT $1 OFFSET $2`,
-        [BATCH, offset]
+        [BATCH, offset, SITE_URL]
       );
       if (batch.rows.length === 0) break;
       for (const product of batch.rows) {

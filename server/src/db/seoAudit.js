@@ -53,6 +53,36 @@ const run = async () => {
   record(emptyStrings.rows[0].n === 0, 'No empty-string SEO values (NULL means fall back)',
     emptyStrings.rows[0].n ? `${emptyStrings.rows[0].n} rows store '' instead of NULL` : '');
 
+  // Consolidated duplicates must point at a page that exists and is itself
+  // canonical, or the group leads nowhere.
+  const danglingCanonical = await query(
+    `SELECT COUNT(*)::int n FROM products p
+      WHERE p.canonical_url IS NOT NULL
+        AND p.canonical_url <> $1 || '/product/' || p.slug
+        AND NOT EXISTS (SELECT 1 FROM products t WHERE $1 || '/product/' || t.slug = p.canonical_url)`,
+    [SITE_URL]
+  );
+  record(danglingCanonical.rows[0].n === 0, 'Canonical overrides point at a real product',
+    danglingCanonical.rows[0].n ? `${danglingCanonical.rows[0].n} dangling` : '');
+
+  const canonicalChains = await query(
+    `SELECT COUNT(*)::int n FROM products p
+       JOIN products t ON $1 || '/product/' || t.slug = p.canonical_url
+      WHERE p.canonical_url IS NOT NULL
+        AND t.canonical_url IS NOT NULL
+        AND t.canonical_url <> $1 || '/product/' || t.slug`,
+    [SITE_URL]
+  );
+  record(canonicalChains.rows[0].n === 0, 'No canonical chains (target is itself canonical)',
+    canonicalChains.rows[0].n ? `${canonicalChains.rows[0].n} chained` : '');
+
+  const consolidated = await query(
+    `SELECT COUNT(*)::int n FROM products WHERE canonical_url IS NOT NULL
+       AND canonical_url <> $1 || '/product/' || slug`,
+    [SITE_URL]
+  );
+  record(true, 'Duplicate listings consolidated', `${consolidated.rows[0].n} URL(s) canonicalised`);
+
   /* --- Redirects --- */
   const selfRefs = await query('SELECT COUNT(*)::int n FROM redirects WHERE source = destination');
   record(selfRefs.rows[0].n === 0, 'No redirect points at itself');
@@ -115,6 +145,15 @@ const run = async () => {
     const leaked = noindexProducts.rows.filter((p) => sitemap.includes(`/product/${p.slug}<`));
     record(leaked.length === 0, 'Noindex products excluded from sitemap',
       `${noindexProducts.rowCount} noindex product(s)`);
+
+    const consolidatedSlugs = await query(
+      `SELECT slug FROM products WHERE canonical_url IS NOT NULL
+         AND canonical_url <> $1 || '/product/' || slug LIMIT 50`,
+      [SITE_URL]
+    );
+    const leakedDupes = consolidatedSlugs.rows.filter((p) => sitemap.includes(`/product/${p.slug}<`));
+    record(leakedDupes.length === 0, 'Canonicalised duplicates excluded from sitemap',
+      leakedDupes.length ? `${leakedDupes.length} still listed` : '');
 
     const draftPosts = await query("SELECT slug FROM blog_posts WHERE status = 'draft'");
     const leakedPosts = draftPosts.rows.filter((p) => sitemap.includes(`/blog/${p.slug}<`));
