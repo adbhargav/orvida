@@ -28,6 +28,8 @@ const About = lazy(() => import('./pages/About'));
 const GiftingConcierge = lazy(() => import('./pages/GiftingConcierge'));
 const PolicyPage = lazy(() => import('./pages/PolicyPage'));
 const SeoLandingPage = lazy(() => import('./pages/SeoLandingPage'));
+const BlogIndex = lazy(() => import('./pages/BlogIndex'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 function ScrollToTop() {
@@ -73,6 +75,10 @@ function AppContent() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/gifting-concierge" element={<GiftingConcierge />} />
             <Route path="/about" element={<About />} />
+            {/* Declared above the catch-all "/:slug" so a landing page can
+                never shadow the journal. */}
+            <Route path="/blog" element={<BlogIndex />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/policies/:slug" element={<PolicyPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             {/* SEO landing pages own the remaining single-segment slugs.

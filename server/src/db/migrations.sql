@@ -250,3 +250,50 @@ CREATE TABLE IF NOT EXISTS seo_page_templates (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 15. Blog. Posts differ from landing pages enough to warrant their own table
+--     (author, excerpt, tags, an index at /blog), but they reuse the same slug
+--     service, redirect table, sitemap and SEO scoring.
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  status VARCHAR(20) DEFAULT 'draft',           -- draft, published, scheduled
+  excerpt TEXT,
+  content TEXT,
+  featured_image TEXT,
+  image_alt_text VARCHAR(255),
+  author_name VARCHAR(160),
+  category VARCHAR(120),
+  tags TEXT[] DEFAULT '{}',
+  reading_minutes INT DEFAULT 1,
+  is_featured BOOLEAN DEFAULT FALSE,
+
+  -- Search metadata, mirroring the landing-page fields.
+  seo_title VARCHAR(255),
+  meta_description TEXT,
+  focus_keyword VARCHAR(255),
+  seo_keywords TEXT,
+  canonical_url TEXT,
+  og_title VARCHAR(255),
+  og_description TEXT,
+  og_image TEXT,
+  twitter_title VARCHAR(255),
+  twitter_description TEXT,
+  twitter_image TEXT,
+  robots_index BOOLEAN DEFAULT TRUE,
+  robots_follow BOOLEAN DEFAULT TRUE,
+  include_in_sitemap BOOLEAN DEFAULT TRUE,
+  sitemap_priority NUMERIC(2, 1) DEFAULT 0.6,
+  sitemap_changefreq VARCHAR(20) DEFAULT 'monthly',
+
+  published_at TIMESTAMP WITH TIME ZONE,
+  scheduled_at TIMESTAMP WITH TIME ZONE,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  updated_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_blog_status ON blog_posts(status);
+CREATE INDEX IF NOT EXISTS idx_blog_published ON blog_posts(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blog_scheduled ON blog_posts(scheduled_at) WHERE status = 'scheduled';

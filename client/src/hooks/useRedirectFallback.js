@@ -19,7 +19,13 @@ export default function useRedirectFallback(active) {
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (!active) return undefined;
+    // Once the page has content again — after a redirect landed, or on the
+    // next slug — the flag has to clear, or the caller renders its loading
+    // state forever.
+    if (!active) {
+      setChecking(false);
+      return undefined;
+    }
 
     let cancelled = false;
     setChecking(true);

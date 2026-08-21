@@ -321,6 +321,32 @@ export const api = {
     removeTemplate: (id) => request(`/seo/admin/pages/templates/${id}`, { method: 'DELETE', auth: true }),
   },
 
+  blog: {
+    // Public — only live posts are ever returned.
+    list: (params = {}) => {
+      const q = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v !== undefined && v !== null)
+      ).toString();
+      return request(`/blog${q ? `?${q}` : ''}`);
+    },
+    getPost: (slug) => request(`/blog/${encodeURIComponent(slug)}`),
+
+    stats: () => request('/blog/admin/stats', { auth: true }),
+    listPosts: (params = {}) => {
+      const q = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== '' && v !== undefined && v !== null)
+      ).toString();
+      return request(`/blog/admin/posts${q ? `?${q}` : ''}`, { auth: true });
+    },
+    getPostAdmin: (id) => request(`/blog/admin/posts/${id}`, { auth: true }),
+    createPost: (data) => request('/blog/admin/posts', { method: 'POST', body: data, auth: true }),
+    updatePost: (id, data) => request(`/blog/admin/posts/${id}`, { method: 'PUT', body: data, auth: true }),
+    duplicatePost: (id) => request(`/blog/admin/posts/${id}/duplicate`, { method: 'POST', auth: true }),
+    removePost: (id) => request(`/blog/admin/posts/${id}`, { method: 'DELETE', auth: true }),
+    bulkPosts: (action, ids) =>
+      request('/blog/admin/posts/bulk', { method: 'POST', body: { action, ids }, auth: true }),
+  },
+
   content: {
     // Returns { content: { key: {...} } }; pass keys to fetch specific blocks.
     get: (...keys) => request(`/content${keys.length ? `?keys=${keys.join(',')}` : ''}`),

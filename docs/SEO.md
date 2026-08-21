@@ -297,3 +297,69 @@ there is no roles/permissions table. Every landing-page route therefore sits
 behind `authenticateToken + requireAdmin`, exactly like every other admin
 feature. Granular permissions (SEO_VIEW, SEO_PUBLISH, …) would require
 introducing an RBAC system, which is a separate piece of work.
+
+---
+
+## 14. Blog
+
+Articles at `/blog` and `/blog/:slug`. Managed under **Admin → Blog**.
+
+### Why a separate table
+
+The blog reuses the landing-page machinery — the same slug and redirect
+service, the same scoring library, the same previews, the same sitemap — but
+posts carry things a landing page does not: an author, an excerpt, a category,
+tags, a reading time, and a listing page that has to sort and filter them.
+`blog_posts` (migration §15) holds all of it.
+
+### Statuses and scheduling
+
+Identical to landing pages: **draft** is invisible everywhere, **published**
+is live, **scheduled** goes live on its own once `scheduled_at` passes — no
+cron involved. A draft is a 404 to the public API, so an unpublished article
+cannot be read by guessing its URL.
+
+### The editor
+
+Four tabs — Post, Search, Social, Advanced — with the same right rail
+(live score, warnings, Google preview, social preview, checklist). The slug
+follows the title until an admin edits it, reading time is recomputed from the
+article on every save, and leaving with unsaved changes prompts first.
+
+The score reuses `calculateSeoScore` with the internal-links check excluded,
+since posts have no link block; the post title stands in for the H1 and the
+excerpt for the intro, because that is what each one renders as.
+
+### Fallbacks
+
+Same chain as everything else — nothing derivable is stored:
+
+```
+SEO title       →  post title
+Meta description →  excerpt  →  global default
+OG/Twitter image →  featured image  →  global default
+Author           →  the admin who created the post
+```
+
+### Indexing
+
+- Published, indexable posts appear in `/sitemap.xml` with their own priority
+  and change frequency; `/blog` itself is a static sitemap entry.
+- A post set to “no index” is hidden from the blog index as well as from
+  Google — a page nobody should find should not be linked from the site.
+- Filtered and paginated index views (`?category=`, `?tag=`, `?search=`,
+  `?page=`) are `noindex, follow` and canonicalise to `/blog`, because they
+  are the same articles rearranged.
+- Every post emits `BlogPosting` structured data with its dates, author and
+  publisher; the index emits `Blog`.
+
+### Renaming
+
+Renaming a **published** post records a 301 in the existing `redirects` table,
+exactly like products and landing pages, and the storefront follows it before
+showing a 404. Draft renames record nothing, since nothing was public.
+
+### Route precedence
+
+`/blog` and `/blog/:slug` are declared above the catch-all `/:slug`, so a
+landing page can never take the blog's URLs.

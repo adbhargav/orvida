@@ -76,6 +76,31 @@ const run = async () => {
   record(liveTargets.rows[0].n === 0, 'Product redirects point at live URLs',
     liveTargets.rows[0].n ? `${liveTargets.rows[0].n} dangling` : '');
 
+  /* --- Blog --- */
+  const dupBlogSlugs = await query(
+    'SELECT slug, COUNT(*)::int n FROM blog_posts GROUP BY slug HAVING COUNT(*) > 1'
+  );
+  record(dupBlogSlugs.rowCount === 0, 'Blog slugs are unique',
+    `${(await query('SELECT COUNT(*)::int n FROM blog_posts')).rows[0].n} posts`);
+
+  const blogEmptyStrings = await query(
+    "SELECT COUNT(*)::int n FROM blog_posts WHERE seo_title = '' OR meta_description = '' OR image_alt_text = ''"
+  );
+  record(blogEmptyStrings.rows[0].n === 0, 'No empty-string SEO values on posts (NULL means fall back)',
+    blogEmptyStrings.rows[0].n ? `${blogEmptyStrings.rows[0].n} rows store '' instead of NULL` : '');
+
+  // A scheduled post with no date would never go live and never be noticed.
+  const orphanSchedules = await query(
+    "SELECT COUNT(*)::int n FROM blog_posts WHERE status = 'scheduled' AND scheduled_at IS NULL"
+  );
+  record(orphanSchedules.rows[0].n === 0, 'Every scheduled post has a date',
+    orphanSchedules.rows[0].n ? `${orphanSchedules.rows[0].n} would never publish` : '');
+
+  const blogCanonical = await query(
+    "SELECT COUNT(*)::int n FROM blog_posts WHERE canonical_url ILIKE '%localhost%' OR canonical_url ILIKE '%127.0.0.1%'"
+  );
+  record(blogCanonical.rows[0].n === 0, 'No post canonical points at localhost');
+
   /* --- Crawler endpoints --- */
   try {
     const sitemapRes = await fetch(`${API}/sitemap.xml`);
@@ -90,6 +115,11 @@ const run = async () => {
     const leaked = noindexProducts.rows.filter((p) => sitemap.includes(`/product/${p.slug}<`));
     record(leaked.length === 0, 'Noindex products excluded from sitemap',
       `${noindexProducts.rowCount} noindex product(s)`);
+
+    const draftPosts = await query("SELECT slug FROM blog_posts WHERE status = 'draft'");
+    const leakedPosts = draftPosts.rows.filter((p) => sitemap.includes(`/blog/${p.slug}<`));
+    record(leakedPosts.length === 0, 'Draft posts excluded from sitemap',
+      `${draftPosts.rowCount} draft(s)`);
 
     const robotsRes = await fetch(`${API}/robots.txt`);
     const robots = await robotsRes.text();

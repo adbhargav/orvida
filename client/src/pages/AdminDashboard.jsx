@@ -16,6 +16,7 @@ import AdminNewsletter from './admin/AdminNewsletter';
 import AdminSiteContent from './admin/AdminSiteContent';
 import AdminSeo from './admin/AdminSeo';
 import AdminSeoPages from './admin/AdminSeoPages';
+import AdminBlog from './admin/AdminBlog';
 
 const PANELS = {
   overview: AdminOverview,
@@ -30,6 +31,7 @@ const PANELS = {
   enquiries: AdminEnquiries,
   newsletter: AdminNewsletter,
   content: AdminSiteContent,
+  blog: AdminBlog,
   seo: AdminSeo,
   'seo-pages': AdminSeoPages,
   // The SEO settings tab reuses the site-content panel, filtered to its own

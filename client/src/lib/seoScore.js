@@ -29,9 +29,14 @@ export const RECOMMENDED = {
 
 /**
  * @param {object} page  The editor's form state (camelCase)
+ * @param {object} [options]
+ * @param {string[]} [options.exclude]  Check keys that do not apply to this
+ *   content type — excluded checks are dropped from the total rather than
+ *   scored as failures, so a blog post is not marked down for lacking the
+ *   structures only a landing page has.
  * @returns {{ score: number, band: string, checks: Array, warnings: Array }}
  */
-export function calculateSeoScore(page = {}) {
+export function calculateSeoScore(page = {}, { exclude = [] } = {}) {
   const title = page.seoTitle || '';
   const description = page.metaDescription || '';
   const keyword = page.focusKeyword || '';
@@ -112,8 +117,10 @@ export function calculateSeoScore(page = {}) {
     },
   ];
 
-  const totalWeight = checks.reduce((sum, c) => sum + c.weight, 0);
-  const earned = checks.reduce((sum, c) => sum + (c.pass ? c.weight : 0), 0);
+  const scored = exclude.length ? checks.filter((c) => !exclude.includes(c.key)) : checks;
+
+  const totalWeight = scored.reduce((sum, c) => sum + c.weight, 0);
+  const earned = scored.reduce((sum, c) => sum + (c.pass ? c.weight : 0), 0);
   const score = Math.round((earned / totalWeight) * 100);
 
   const band =
@@ -137,7 +144,7 @@ export function calculateSeoScore(page = {}) {
     warnings.push('Scheduled, but no publishing date has been set.');
   }
 
-  return { score, band, checks, warnings };
+  return { score, band, checks: scored, warnings };
 }
 
 export const scoreBandTone = (score) =>
@@ -165,6 +172,41 @@ export const scoreFromRow = (row = {}) =>
     includeInSitemap: row.include_in_sitemap,
     robotsIndex: row.robots_index,
     schemaType: row.schema_type,
+    status: row.status,
+    scheduledAt: row.scheduled_at,
+  });
+
+/**
+ * Blog posts reuse the same checklist, minus the parts that only exist on a
+ * landing page. The post's own title stands in for the H1, and the excerpt
+ * for the intro, because that is what each one actually renders as.
+ */
+const BLOG_EXCLUDE = ['internalLinks'];
+
+export const calculateBlogScore = (post = {}) =>
+  calculateSeoScore(
+    {
+      ...post,
+      h1: post.title,
+      intro: post.excerpt,
+      schemaType: 'Article',
+    },
+    { exclude: BLOG_EXCLUDE }
+  );
+
+/** Maps a blog API row (snake_case) onto the calculator. */
+export const blogScoreFromRow = (row = {}) =>
+  calculateBlogScore({
+    title: row.title,
+    excerpt: row.excerpt,
+    content: row.content,
+    seoTitle: row.seo_title,
+    metaDescription: row.meta_description,
+    focusKeyword: row.focus_keyword,
+    featuredImage: row.featured_image,
+    imageAltText: row.image_alt_text,
+    includeInSitemap: row.include_in_sitemap,
+    robotsIndex: row.robots_index,
     status: row.status,
     scheduledAt: row.scheduled_at,
   });

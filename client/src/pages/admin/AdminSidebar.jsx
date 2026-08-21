@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Package, Layers, CreditCard, Users,
   Image as ImageIcon, Tag, Ticket, ShoppingBag, LogOut, Store,
   MessageSquare, Mail, FileText, Search, ChevronDown, Globe, SlidersHorizontal,
+  PenSquare,
 } from 'lucide-react';
 import logoImg from '../../assets/logo.png';
 
@@ -20,6 +21,7 @@ const MENU_ITEMS = [
   { id: 'newsletter', label: 'Newsletter', icon: Mail },
   { id: 'banners', label: 'Banners', icon: ImageIcon },
   { id: 'content', label: 'Site Content', icon: FileText },
+  { id: 'blog', label: 'Blog', icon: PenSquare },
   // SEO is a group: one dashboard, the landing-page library, and the global
   // settings that every page falls back to.
   {

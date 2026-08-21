@@ -1,5 +1,6 @@
 import { query, pool } from '../config/db.js';
 import { LIVE_CONDITION, promoteDuePages } from './seoPageController.js';
+import { LIVE_CONDITION as BLOG_LIVE, promoteDuePosts } from './blogController.js';
 import {
   SITE_URL,
   slugify,
@@ -37,6 +38,7 @@ const INDEXABLE = "(meta_robots IS NULL OR meta_robots NOT LIKE 'noindex%')";
 const STATIC_ROUTES = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
   { path: '/about', changefreq: 'monthly', priority: '0.6' },
+  { path: '/blog', changefreq: 'weekly', priority: '0.7' },
   { path: '/gifting-concierge', changefreq: 'monthly', priority: '0.7' },
   { path: '/policies/privacy-policy', changefreq: 'yearly', priority: '0.3' },
   { path: '/policies/terms-and-conditions', changefreq: 'yearly', priority: '0.3' },
@@ -110,6 +112,26 @@ export const getSitemap = async (req, res, next) => {
           lastmod: p.updated_at,
           changefreq: p.sitemap_changefreq || 'monthly',
           priority: p.sitemap_priority != null ? Number(p.sitemap_priority).toFixed(1) : '0.7',
+        })
+      );
+    }
+
+    // Blog posts: same rules as landing pages — live, indexable and
+    // sitemap-enabled only.
+    await promoteDuePosts();
+    const posts = await query(
+      `SELECT slug, updated_at, sitemap_priority, sitemap_changefreq
+         FROM blog_posts
+        WHERE ${BLOG_LIVE} AND include_in_sitemap = TRUE AND robots_index = TRUE
+        ORDER BY id`
+    );
+    for (const post of posts.rows) {
+      entries.push(
+        urlEntry({
+          loc: `${SITE_URL}/blog/${post.slug}`,
+          lastmod: post.updated_at,
+          changefreq: post.sitemap_changefreq || 'monthly',
+          priority: post.sitemap_priority != null ? Number(post.sitemap_priority).toFixed(1) : '0.6',
         })
       );
     }

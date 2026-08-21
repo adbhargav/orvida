@@ -35,6 +35,7 @@ const LINK_GROUPS = [
     heading: 'The House',
     links: [
       { label: 'Our Story', to: '/about' },
+      { label: 'Journal', to: '/blog' },
       { label: 'Craftsmanship', to: '/about' },
       { label: 'Plant Care', to: '/about' },
     ],
