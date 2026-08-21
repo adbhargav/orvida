@@ -5,7 +5,14 @@ export const getCategories = async (req, res, next) => {
   try {
     const categoriesRes = await query(`
       SELECT c.*,
-             (SELECT json_agg(json_build_object('id', sc.id, 'name', sc.name, 'slug', sc.slug, 'image', sc.image, 'count', sc.count))
+             (SELECT json_agg(json_build_object(
+                'id', sc.id, 'name', sc.name, 'slug', sc.slug, 'image', sc.image, 'count', sc.count,
+                -- Without these the storefront cannot see a subcategory's own
+                -- metadata, so every subcategory page inherits its parent's
+                -- title and description and they compete as duplicates.
+                'seo_title', sc.seo_title, 'seo_description', sc.seo_description,
+                'meta_robots', sc.meta_robots, 'og_image', sc.og_image,
+                'image_alt_text', sc.image_alt_text))
               FROM subcategories sc WHERE sc.category_id = c.id) as subcategories
       FROM categories c
       ORDER BY c.id ASC
@@ -28,7 +35,14 @@ export const getCategoryBySlug = async (req, res, next) => {
     const { slug } = req.params;
     const catRes = await query(`
       SELECT c.*,
-             (SELECT json_agg(json_build_object('id', sc.id, 'name', sc.name, 'slug', sc.slug, 'image', sc.image, 'count', sc.count))
+             (SELECT json_agg(json_build_object(
+                'id', sc.id, 'name', sc.name, 'slug', sc.slug, 'image', sc.image, 'count', sc.count,
+                -- Without these the storefront cannot see a subcategory's own
+                -- metadata, so every subcategory page inherits its parent's
+                -- title and description and they compete as duplicates.
+                'seo_title', sc.seo_title, 'seo_description', sc.seo_description,
+                'meta_robots', sc.meta_robots, 'og_image', sc.og_image,
+                'image_alt_text', sc.image_alt_text))
               FROM subcategories sc WHERE sc.category_id = c.id) as subcategories
       FROM categories c
       WHERE c.slug = $1

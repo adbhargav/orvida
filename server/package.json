@@ -12,7 +12,8 @@
     "db:sync-sequences": "node src/db/syncSequences.js",
     "test:webhook": "node src/db/testWebhook.js",
     "seo:audit": "node src/db/seoAudit.js",
-    "seo:canonicalise": "node src/db/canonicaliseDuplicates.js"
+    "seo:canonicalise": "node src/db/canonicaliseDuplicates.js",
+    "seo:seed": "node src/db/seedSeoContent.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

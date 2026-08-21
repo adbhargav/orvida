@@ -409,3 +409,50 @@ was ignored, so a product marked noindex still rendered `index, follow`.
 reads an entity, accepting both spellings. If you add an SEO field, no
 renaming is needed at the boundary — but do confirm the value actually
 appears in the rendered `<head>`, not just in the database.
+
+---
+
+## 17. Seeding the fields that were never filled
+
+```bash
+cd server && npm run seo:seed
+```
+
+Writes the global `seo_settings` document, SEO titles/descriptions/alt text
+for all categories and subcategories, care copy for the plants that arrived
+from the import with no text, shorter titles for names Google would truncate,
+and distinct descriptions where the import gave a whole family one shared
+paragraph.
+
+Everything is COALESCE-guarded on the existing value, so re-running it after
+an admin edit changes nothing. The one exception is the shared-boilerplate
+descriptions, which overwrite by design — and only while the text is still
+identical to a sibling's. Edit one in the admin panel and the script stops
+touching it.
+
+## 18. What the health score measures
+
+Admin → SEO shows a weighted score. It counts what a page will **actually
+render**, not whether an admin typed an override:
+
+- A product with good copy of its own needs no `seo_description`; the
+  fallback chain is the design, so it is not counted as a gap.
+- Titles are measured against the space left once the brand suffix from the
+  title template is subtracted — the question is whether Google will truncate
+  it, not whether someone filled a field.
+- Products that canonicalise elsewhere are excluded entirely. Grading pages
+  you have told Google to ignore only manufactures work.
+
+## 19. Two bugs worth remembering
+
+Both were the same shape: **data existed in the database, was editable in the
+admin panel, and never reached the page.**
+
+1. `lib/seo.js` read camelCase while the API returned snake_case (§16).
+2. The categories endpoint did not select the subcategory SEO columns, so
+   every subcategory page inherited its parent's title and description and
+   the 17 of them competed as four duplicates.
+
+Neither showed up as an error — the fallbacks quietly produced something
+plausible. When you add an SEO field, always confirm the value appears in the
+rendered `<head>`, not just in the database.

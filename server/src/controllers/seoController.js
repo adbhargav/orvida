@@ -206,37 +206,54 @@ export const getRedirect = async (req, res, next) => {
 /** GET /api/seo/admin/audit — the numbers behind the admin SEO dashboard. */
 export const getSeoAudit = async (req, res, next) => {
   try {
-    const [products, categories, redirects, settings] = await Promise.all([
+    // Settings first: the title template decides how many characters the
+    // brand suffix costs, which is part of the length a product title has to
+    // fit inside.
+    const settings = await query("SELECT content FROM site_content WHERE key = 'seo_settings'");
+    const globalSettings = settings.rows[0]?.content || {};
+    const suffix = (globalSettings.titleTemplate || '%title% | %siteName%')
+      .replace('%title%', '')
+      .replace('%siteName%', globalSettings.siteName || 'ORIVIDA');
+    const titleBudget = Math.max(20, 60 - suffix.length);
+
+    const [products, categories, redirects] = await Promise.all([
+      // These count what a page will actually render, not whether an admin
+      // happened to type an override. A product whose own copy produces a
+      // good description needs no override, and the fallback chain is the
+      // documented design — scoring it as a gap would report a problem that
+      // does not exist.
       query(`SELECT
                COUNT(*)::int                                                          AS total,
-               COUNT(*) FILTER (WHERE seo_title IS NULL OR seo_title = '')::int       AS missing_title,
-               COUNT(*) FILTER (WHERE seo_description IS NULL OR seo_description = '')::int AS missing_description,
+               COUNT(*) FILTER (WHERE LENGTH(COALESCE(NULLIF(seo_title,''), name)) > $1)::int AS long_title,
+               COUNT(*) FILTER (WHERE COALESCE(NULLIF(seo_description,''), NULLIF(short_description,''), NULLIF(description,'')) IS NULL)::int AS missing_description,
                COUNT(*) FILTER (WHERE image_alt_text IS NULL OR image_alt_text = '')::int  AS missing_alt,
                COUNT(*) FILTER (WHERE slug IS NULL OR slug = '')::int                 AS missing_slug,
                COUNT(*) FILTER (WHERE meta_robots LIKE 'noindex%')::int               AS noindex,
                COUNT(*) FILTER (WHERE NOT EXISTS (
                  SELECT 1 FROM product_images pi WHERE pi.product_id = products.id))::int AS missing_image
-             FROM products`),
+             FROM products
+            WHERE canonical_url IS NULL OR canonical_url = $2 || '/product/' || slug`, [titleBudget, SITE_URL]),
       query(`SELECT
                COUNT(*)::int AS total,
                COUNT(*) FILTER (WHERE seo_title IS NULL OR seo_title = '')::int AS missing_title,
-               COUNT(*) FILTER (WHERE seo_description IS NULL OR seo_description = '')::int AS missing_description,
+               COUNT(*) FILTER (WHERE COALESCE(NULLIF(seo_description,''), NULLIF(description,'')) IS NULL)::int AS missing_description,
                COUNT(*) FILTER (WHERE meta_robots LIKE 'noindex%')::int AS noindex
              FROM categories`),
       query('SELECT COUNT(*)::int AS total, COALESCE(SUM(hits), 0)::int AS hits FROM redirects'),
-      query("SELECT content FROM site_content WHERE key = 'seo_settings'"),
     ]);
 
     const p = products.rows[0];
     const c = categories.rows[0];
-    const global = settings.rows[0]?.content || {};
+    const global = globalSettings;
 
     // Weighted so that catalogue coverage dominates the score, since that is
     // what actually moves search performance.
     const ratio = (missing, total) => (total === 0 ? 1 : 1 - missing / total);
     const checks = [
-      { key: 'productTitles', label: 'Product SEO titles', weight: 3, score: ratio(p.missing_title, p.total), detail: `${p.total - p.missing_title}/${p.total}` },
-      { key: 'productDescriptions', label: 'Product meta descriptions', weight: 3, score: ratio(p.missing_description, p.total), detail: `${p.total - p.missing_description}/${p.total}` },
+      // A title only needs an override when the product's own name would be
+      // truncated in results, so that is what this measures.
+      { key: 'productTitles', label: `Product titles that fit (≤${titleBudget} chars + brand)`, weight: 3, score: ratio(p.long_title, p.total), detail: `${p.total - p.long_title}/${p.total}` },
+      { key: 'productDescriptions', label: 'Products with a description', weight: 3, score: ratio(p.missing_description, p.total), detail: `${p.total - p.missing_description}/${p.total}` },
       { key: 'imageAlt', label: 'Product image alt text', weight: 2, score: ratio(p.missing_alt, p.total), detail: `${p.total - p.missing_alt}/${p.total}` },
       { key: 'productImages', label: 'Products with imagery', weight: 2, score: ratio(p.missing_image, p.total), detail: `${p.total - p.missing_image}/${p.total}` },
       { key: 'categoryTitles', label: 'Category SEO titles', weight: 1, score: ratio(c.missing_title, c.total), detail: `${c.total - c.missing_title}/${c.total}` },
