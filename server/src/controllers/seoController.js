@@ -57,10 +57,15 @@ export const getSitemap = async (req, res, next) => {
       urlEntry({ loc: `${SITE_URL}${r.path}`, changefreq: r.changefreq, priority: r.priority })
     );
 
+    // An empty collection page has nothing for a crawler to index, so it is
+    // not advertised until it holds something. It starts appearing on its own
+    // once the first product lands in it.
     const categories = await query(
       `SELECT c.slug, c.updated_at,
               (SELECT json_agg(json_build_object('slug', sc.slug, 'robots', sc.meta_robots))
-                 FROM subcategories sc WHERE sc.category_id = c.id) AS subs
+                 FROM subcategories sc
+                WHERE sc.category_id = c.id
+                  AND EXISTS (SELECT 1 FROM products p WHERE p.subcategory_id = sc.id)) AS subs
          FROM categories c
         WHERE ${INDEXABLE}
         ORDER BY c.id`
