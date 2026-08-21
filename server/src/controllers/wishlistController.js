@@ -33,10 +33,49 @@ export const getWishlist = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/wishlist/merge — folds a guest's saved ids into their account.
+ *
+ * Called once at sign-in, so a wishlist built before logging in is not lost
+ * the moment the visitor identifies themselves. Inserting is additive and
+ * conflict-tolerant: signing in on a second device merges the two lists
+ * rather than one replacing the other.
+ */
+export const mergeWishlist = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const productIds = (Array.isArray(req.body.productIds) ? req.body.productIds : [])
+      .map(Number)
+      .filter(Number.isInteger)
+      .slice(0, 200);
+
+    if (productIds.length > 0) {
+      await query(
+        `INSERT INTO wishlist_items (user_id, product_id)
+         SELECT $1, id FROM products WHERE id = ANY($2::int[])
+         ON CONFLICT (user_id, product_id) DO NOTHING`,
+        [userId, productIds]
+      );
+    }
+
+    // Most recently saved first, so the wishlist page can keep that order.
+    const merged = await query(
+      'SELECT product_id FROM wishlist_items WHERE user_id = $1 ORDER BY created_at DESC, id DESC',
+      [userId]
+    );
+    res.json({ success: true, productIds: merged.rows.map((r) => r.product_id) });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const toggleWishlist = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { productId } = req.body;
+    const productId = Number(req.body.productId);
+    if (!Number.isInteger(productId)) {
+      return res.status(400).json({ success: false, message: 'A valid productId is required.' });
+    }
 
     const existing = await query('SELECT * FROM wishlist_items WHERE user_id = $1 AND product_id = $2', [userId, productId]);
 

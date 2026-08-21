@@ -15,14 +15,24 @@ export default function Wishlist() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Resolve saved ids against the live catalogue — the previous build only
-  // matched against bundled sample data, so real products never appeared.
+  // Fetch exactly the saved products.
+  //
+  // This used to pull the first 200 of the catalogue and filter locally, so
+  // anything saved from beyond that page silently vanished here while the
+  // header still counted it.
   useEffect(() => {
     let cancelled = false;
+
+    if (wishlistIds.length === 0) {
+      setProducts([]);
+      setLoading(false);
+      return () => { cancelled = true; };
+    }
+
     (async () => {
       setLoading(true);
       try {
-        const res = await api.products.getAll({ limit: 200 });
+        const res = await api.products.getAll({ ids: wishlistIds.join(','), limit: wishlistIds.length });
         if (!cancelled) setProducts(res.products || []);
       } catch {
         if (!cancelled) setProducts([]);
@@ -30,10 +40,15 @@ export default function Wishlist() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, []);
 
-  const wishlistProducts = products.filter((p) => wishlistIds.includes(p.id));
+    return () => { cancelled = true; };
+    // Re-runs when a product is removed from this very page.
+  }, [wishlistIds]);
+
+  // Keep the saved order — most recent first — rather than the catalogue's.
+  const wishlistProducts = wishlistIds
+    .map((id) => products.find((p) => p.id === id))
+    .filter(Boolean);
 
   return (
     <div className="bg-canvas min-h-[60vh]">

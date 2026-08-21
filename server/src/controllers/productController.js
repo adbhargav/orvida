@@ -3,7 +3,7 @@ import { collectSeoFields, uniqueSlug, recordSlugRedirect } from '../services/se
 
 export const getProducts = async (req, res, next) => {
   try {
-    const { category, subcategory, search, minPrice, maxPrice, isFeatured, isBestseller, sortBy, limit = 50, page = 1 } = req.query;
+    const { category, subcategory, search, minPrice, maxPrice, isFeatured, isBestseller, sortBy, ids, limit = 50, page = 1 } = req.query;
 
     let sql = `
       SELECT p.*, c.name as category_name, c.slug as category_slug, 
@@ -16,6 +16,22 @@ export const getProducts = async (req, res, next) => {
       WHERE 1=1
     `;
     const params = [];
+
+    // An explicit id list — used by the wishlist, which needs exactly the
+    // products a visitor saved rather than a page of the catalogue to filter
+    // through.
+    if (ids !== undefined) {
+      const wanted = String(ids)
+        .split(',')
+        .map((value) => Number(value.trim()))
+        .filter(Number.isInteger)
+        .slice(0, 200);
+      if (wanted.length === 0) {
+        return res.json({ success: true, count: 0, products: [] });
+      }
+      params.push(wanted);
+      sql += ` AND p.id = ANY($${params.length}::int[])`;
+    }
 
     if (category) {
       params.push(category);

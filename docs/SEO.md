@@ -398,19 +398,18 @@ consolidation unnecessary.
 ## 16. camelCase at the boundary
 
 The API returns snake_case rows; the generators in `client/src/lib/seo.js`
-read camelCase. That mismatch meant `product.seoTitle` was quietly `undefined`
-for every row the server sent, so **no admin SEO override ever reached a
-page** — titles, descriptions, canonicals, robots and social cards all fell
-through to their defaults, and the fallbacks made it look like it worked.
-Breadcrumbs lost their category trail for the same reason, and `meta_robots`
-was ignored, so a product marked noindex still rendered `index, follow`.
+read camelCase. `normalizeProduct` and `normalizeCategory` in
+`client/src/services/api.js` bridge the two, mapping every SEO field (and the
+subcategories nested inside a category) as the response is parsed.
 
-`normaliseEntity` now maps snake_case onto camelCase before any generator
-reads an entity, accepting both spellings. If you add an SEO field, no
-renaming is needed at the boundary — but do confirm the value actually
-appears in the rendered `<head>`, not just in the database.
+That is the single place the translation happens. **A generator must only ever
+be handed an entity that came through those functions** — a raw row fetched
+past them would leave `product.seoTitle` undefined and every override would
+silently fall back to its default, with nothing to show that anything was
+wrong.
 
----
+When you add an SEO field, add it to the matching normaliser too, and confirm
+the value appears in the rendered `<head>` rather than just in the database.
 
 ## 17. Seeding the fields that were never filled
 
@@ -443,16 +442,38 @@ render**, not whether an admin typed an override:
 - Products that canonicalise elsewhere are excluded entirely. Grading pages
   you have told Google to ignore only manufactures work.
 
-## 19. Two bugs worth remembering
+## 19. A bug worth remembering
 
-Both were the same shape: **data existed in the database, was editable in the
-admin panel, and never reached the page.**
+The categories endpoint selected only `id, name, slug, image, count` for the
+subcategories nested in its response. The subcategory SEO columns existed in
+the database and were editable in the admin panel, but never left the server,
+so `normalizeCategory` mapped `undefined` for all of them and every
+subcategory page fell back to its parent's title and description — seventeen
+pages competing as four duplicates.
 
-1. `lib/seo.js` read camelCase while the API returned snake_case (§16).
-2. The categories endpoint did not select the subcategory SEO columns, so
-   every subcategory page inherited its parent's title and description and
-   the 17 of them competed as four duplicates.
+Nothing reported an error; the fallback chain quietly produced something
+plausible. **Data that exists, is editable, and never reaches the page is the
+failure mode to watch for here** — check the rendered `<head>`, not the
+database, when verifying an SEO field works end to end.
 
-Neither showed up as an error — the fallbacks quietly produced something
-plausible. When you add an SEO field, always confirm the value appears in the
-rendered `<head>`, not just in the database.
+---
+
+## 20. Wishlist
+
+Saved products live on the visitor's account once they sign in
+(`wishlist_items`), and in `localStorage` before that.
+
+- **Guest** — ids in `localStorage`, resolved against the catalogue by
+  `GET /api/products?ids=…`.
+- **Sign-in** — `POST /api/wishlist/merge` folds the guest ids into the
+  account additively (`ON CONFLICT DO NOTHING`), so a list built before
+  logging in survives and a second device adds to the list rather than
+  replacing it. The local copy is then cleared, or signing out would
+  resurrect items removed while signed in.
+- **Signed in** — `POST /api/wishlist/toggle` per change, applied
+  optimistically and rolled back if the server refuses.
+
+The `/wishlist` page fetches exactly the saved products. It previously
+requested the first 200 of the catalogue and filtered locally, so anything
+saved from beyond that page vanished from the wishlist while the header still
+counted it — with 352 products, 152 of them were unreachable.

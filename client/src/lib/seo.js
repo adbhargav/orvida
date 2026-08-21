@@ -74,30 +74,8 @@ export const getSeoRobots = (value, fallback = 'index, follow') => {
 };
 
 /** Alt text for a product image: explicit override → product name. */
-/**
- * The API speaks snake_case; these generators read camelCase.
- *
- * Without this, `product.seoTitle` was quietly undefined for every row the
- * server sent, so admin SEO overrides — titles, descriptions, canonicals,
- * robots, social cards — never reached the page and the fallbacks masked it.
- * Both spellings are accepted so nothing has to be renamed at the boundary.
- */
-export const normaliseEntity = (entity) => {
-  if (!entity || typeof entity !== 'object') return entity;
-  const out = { ...entity };
-  for (const [key, value] of Object.entries(entity)) {
-    if (!key.includes('_')) continue;
-    const camel = key.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    // An explicit camelCase value always wins over the snake_case twin.
-    if (out[camel] === undefined || out[camel] === null) out[camel] = value;
-  }
-  return out;
-};
-
-export const getImageAlt = (rawProduct, index = 0) => {
-  const product = normaliseEntity(rawProduct);
-  return product?.imageAltText || (index === 0 ? product?.name || '' : `${product?.name || ''} — view ${index + 1}`);
-};
+export const getImageAlt = (product, index = 0) =>
+  product?.imageAltText || (index === 0 ? product?.name || '' : `${product?.name || ''} — view ${index + 1}`);
 
 /* ------------------------------------------------------------------ *
  * Structured data
@@ -160,9 +138,8 @@ export const generateWebsiteSchema = (settings = {}) => ({
   },
 });
 
-export const generateProductSchema = (rawProduct) => {
-  if (!rawProduct) return null;
-  const product = normaliseEntity(rawProduct);
+export const generateProductSchema = (product) => {
+  if (!product) return null;
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -238,9 +215,8 @@ export const generateCollectionSchema = ({ name, description, path, products = [
  * stay declarative and the fallback chain lives in exactly one place.
  * ------------------------------------------------------------------ */
 
-export const generateProductMetadata = (rawProduct, settings = {}) => {
-  if (!rawProduct) return { title: buildTitle('', settings) };
-  const product = normaliseEntity(rawProduct);
+export const generateProductMetadata = (product, settings = {}) => {
+  if (!product) return { title: buildTitle('', settings) };
 
   const crumbs = [
     { name: 'Home', path: '/' },
@@ -270,18 +246,13 @@ export const generateProductMetadata = (rawProduct, settings = {}) => {
     twitterTitle: product.twitterTitle || product.ogTitle || product.name,
     twitterDescription: pickDescription(product.twitterDescription, product.ogDescription, product.seoDescription, product.shortDescription),
     twitterImage: absoluteUrl(product.twitterImage) || getOgImage(product.ogImage, product.images?.[0]?.url, settings),
-    jsonLd: generateProductSchema(rawProduct),
+    jsonLd: generateProductSchema(product),
     breadcrumbs: generateBreadcrumbSchema(crumbs),
   };
 };
 
-export const generateCategoryMetadata = (
-  { category: rawCategory, subcategory: rawSubcategory, products = [], searchTerm = '' },
-  settings = {}
-) => {
-  if (!rawCategory) return { title: buildTitle('Collection', settings) };
-  const category = normaliseEntity(rawCategory);
-  const subcategory = normaliseEntity(rawSubcategory);
+export const generateCategoryMetadata = ({ category, subcategory, products = [], searchTerm = '' }, settings = {}) => {
+  if (!category) return { title: buildTitle('Collection', settings) };
   const entity = subcategory || category;
   const path = subcategory
     ? `/category/${category.slug}/${subcategory.slug}`

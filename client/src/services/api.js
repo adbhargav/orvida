@@ -321,6 +321,13 @@ export const api = {
     removeTemplate: (id) => request(`/seo/admin/pages/templates/${id}`, { method: 'DELETE', auth: true }),
   },
 
+  wishlist: {
+    // Signed-in only — the guest list lives in localStorage until sign-in.
+    get: () => request('/wishlist', { auth: true }),
+    toggle: (productId) => request('/wishlist/toggle', { method: 'POST', body: { productId }, auth: true }),
+    merge: (productIds) => request('/wishlist/merge', { method: 'POST', body: { productIds }, auth: true }),
+  },
+
   blog: {
     // Public — only live posts are ever returned.
     list: (params = {}) => {
