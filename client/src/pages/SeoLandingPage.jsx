@@ -135,8 +135,10 @@ export default function SeoLandingPage() {
         }
       : {
           // An unknown slug is a real 404: say so in the title bar, not just
-          // in the body.
+          // in the body. It also canonicalises to /404 rather than to itself,
+          // so a URL that does not exist is never declared canonical.
           title: notFound ? 'Page Not Found | ORIVIDA' : 'ORIVIDA',
+          path: '/404',
           robots: 'noindex, follow',
         }
   );

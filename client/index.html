@@ -21,7 +21,11 @@
     <meta property="og:image" content="https://orvida.in/logo.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <script type="application/ld+json">
+    <!-- A crawlable floor for bots that do not run JavaScript. Once React
+         mounts, useSiteSeo replaces this with the schema built from the
+         admin's Organisation settings and removes this block, so the page
+         never carries the same entity twice. -->
+    <script type="application/ld+json" id="ld-static-organization">
     {
       "@context": "https://schema.org",
       "@type": "OnlineStore",

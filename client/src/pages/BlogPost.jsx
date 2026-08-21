@@ -97,8 +97,10 @@ export default function BlogPost() {
           ]),
         }
       : {
-          // An unknown slug is a real 404: say so in the title bar too.
+          // An unknown slug is a real 404: say so in the title bar too, and
+          // canonicalise to /404 rather than to a URL that does not exist.
           title: notFound ? 'Article Not Found | ORIVIDA' : 'ORIVIDA',
+          path: '/404',
           robots: 'noindex, follow',
         }
   );

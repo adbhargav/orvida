@@ -114,7 +114,13 @@ export function useSiteSeo(settings) {
     if (s.googleSiteVerification) {
       upsertMeta('name', 'google-site-verification', s.googleSiteVerification);
     }
-    if (s.organizationSchema) upsertJsonLd('organization-jsonld', s.organizationSchema);
+    if (s.organizationSchema) {
+      upsertJsonLd('organization-jsonld', s.organizationSchema);
+      // The static block in index.html describes the same organisation, so it
+      // goes once the live one is in place — two blocks for one entity is
+      // what structured-data validators flag.
+      document.getElementById('ld-static-organization')?.remove();
+    }
     if (s.websiteSchema) upsertJsonLd('website-jsonld', s.websiteSchema);
 
     // Analytics loads only when an ID is configured, so no third-party

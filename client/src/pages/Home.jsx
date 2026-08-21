@@ -130,6 +130,13 @@ export default function Home() {
 
   return (
     <div className="bg-canvas">
+      {/* The homepage leads with a picture banner and has no headline of its
+          own, but a page still needs exactly one H1 naming its subject —
+          screen readers announce it and search engines weigh it heavily. */}
+      <h1 className="sr-only">
+        ORIVIDA — rare indoor plants, bespoke plant gifting and handcrafted décor, delivered across India
+      </h1>
+
       {quickViewProduct && (
         <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
       )}
