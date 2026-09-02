@@ -4,11 +4,11 @@
   "rewrites": [
     {
       "source": "/sitemap.xml",
-      "destination": "https://orvida.onrender.com/sitemap.xml"
+      "destination": "https://api.orvida.in/sitemap.xml"
     },
     {
       "source": "/robots.txt",
-      "destination": "https://orvida.onrender.com/robots.txt"
+      "destination": "https://api.orvida.in/robots.txt"
     },
     {
       "source": "/(.*)",

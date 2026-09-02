@@ -13,7 +13,10 @@
     "test:webhook": "node src/db/testWebhook.js",
     "seo:audit": "node src/db/seoAudit.js",
     "seo:canonicalise": "node src/db/canonicaliseDuplicates.js",
-    "seo:seed": "node src/db/seedSeoContent.js"
+    "seo:seed": "node src/db/seedSeoContent.js",
+    "db:clean-demo": "node src/db/cleanDemoData.js",
+    "admin:password": "node src/db/setAdminPassword.js",
+    "db:rewrite-urls": "node src/db/rewriteAssetUrls.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

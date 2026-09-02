@@ -17,6 +17,8 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+# Annotated production template — placeholders only, no secrets.
+!.env.production.example
 # The production env holds only the public API URL — safe and useful to commit.
 !client/.env.production
 *firebase-adminsdk*.json

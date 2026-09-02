@@ -1,0 +1,47 @@
+# systemd alternative to PM2 — use one or the other, never both.
+#
+#   sudo cp deploy/orvida-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now orvida-api
+#   sudo journalctl -u orvida-api -f
+#
+# PM2 gives clustering across cores and zero-downtime reloads; systemd is
+# simpler and needs nothing installed. Prefer PM2 unless you would rather not
+# add a process manager.
+
+[Unit]
+Description=ORIVIDA API
+Documentation=https://github.com/bhargav/orvida
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=orvida
+Group=orvida
+WorkingDirectory=/var/www/orvida/server
+ExecStart=/usr/bin/node src/server.js
+Environment=NODE_ENV=production
+EnvironmentFile=/var/www/orvida/server/.env
+
+Restart=always
+RestartSec=3
+StartLimitBurst=10
+StartLimitIntervalSec=120
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=orvida-api
+
+# The process needs to read its own directory and nothing else on the box.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/orvida/server/uploads
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target
