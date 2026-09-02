@@ -14,14 +14,17 @@ import {
   signOut,
 } from 'firebase/auth';
 
+// Firebase web config is public by design — it identifies the project, it
+// does not authorise anything. Access is decided by Firebase security rules
+// and, here, by the backend verifying the ID token against the service
+// account for this same project.
 const firebaseConfig = {
-  apiKey: "AIzaSyDYqumiM7js51H5aoWRJXDDzlUY54iTBbE",
-  authDomain: "orvida-33088.firebaseapp.com",
-  projectId: "orvida-33088",
-  storageBucket: "orvida-33088.firebasestorage.app",
-  messagingSenderId: "598816105716",
-  appId: "1:598816105716:web:446235f62d6f7a3ce7eaa1",
-  measurementId: "G-0NQXY7GR32"
+  apiKey: "AIzaSyBX5vCKEwyp-wfPZ5l6GwPxB3q7SIcd4oQ",
+  authDomain: "orivida-490fb.firebaseapp.com",
+  projectId: "orivida-490fb",
+  storageBucket: "orivida-490fb.firebasestorage.app",
+  messagingSenderId: "575142041700",
+  appId: "1:575142041700:web:e240aba74ae60ed6302771"
 };
 
 const app = initializeApp(firebaseConfig);

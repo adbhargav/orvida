@@ -13,17 +13,61 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const serverRootDir = path.resolve(__dirname, '../../');
 
+/**
+ * Finds the service-account JSON without hard-coding a project.
+ *
+ * The filename Firebase hands you carries the project id, so pinning one name
+ * means a new project silently falls through to whatever comes next and the
+ * server ends up verifying tokens against the wrong project. Any
+ * *firebase-adminsdk*.json in the server root is picked up instead, and when
+ * FIREBASE_PROJECT_ID names one, that one wins.
+ */
+const findServiceAccountFile = () => {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) return process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+
+  const candidates = fs
+    .readdirSync(serverRootDir)
+    .filter((name) => name.includes('firebase-adminsdk') && name.endsWith('.json'))
+    .map((name) => path.join(serverRootDir, name));
+
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const wanted = process.env.FIREBASE_PROJECT_ID;
+  const match = wanted && candidates.find((file) => path.basename(file).startsWith(`${wanted}-`));
+  if (match) return match;
+
+  console.warn(
+    `Multiple Firebase service accounts found (${candidates
+      .map((f) => path.basename(f))
+      .join(', ')}). Set FIREBASE_SERVICE_ACCOUNT_PATH to choose one.`
+  );
+  return candidates[0];
+};
+
 try {
-  const serviceAccountFilePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || path.join(serverRootDir, 'orvida-33088-firebase-adminsdk-fbsvc-7a869ca29b.json');
+  const serviceAccountFilePath = findServiceAccountFile();
   const isPlaceholderKey = process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PRIVATE_KEY.includes('YOUR_FIREBASE_PRIVATE_KEY');
 
-  if (fs.existsSync(serviceAccountFilePath)) {
+  if (serviceAccountFilePath && fs.existsSync(serviceAccountFilePath)) {
     const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountFilePath, 'utf-8'));
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
     firebaseInitialized = true;
-    console.log(`Firebase Admin SDK initialized with Service Account file: ${path.basename(serviceAccountFilePath)}`);
+    console.log(`Firebase Admin SDK initialized for project "${serviceAccount.project_id}" (${path.basename(serviceAccountFilePath)})`);
+
+    // The client mints tokens for whatever project its web config names. If
+    // this credential belongs to a different one, every Google sign-in is
+    // rejected with an opaque "Firebase ID token has incorrect audience" —
+    // so say so plainly at boot rather than at 3am.
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PROJECT_ID !== serviceAccount.project_id) {
+      console.warn(
+        `Firebase project mismatch: FIREBASE_PROJECT_ID is "${process.env.FIREBASE_PROJECT_ID}" but this ` +
+          `service account is for "${serviceAccount.project_id}". Google Sign-In will fail unless the ` +
+          `client's firebaseConfig also targets "${serviceAccount.project_id}".`
+      );
+    }
   } else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     // Hosts like Render take a single-line env var far more gracefully than a
     // JSON blob with embedded newlines: base64-encode the service account file
