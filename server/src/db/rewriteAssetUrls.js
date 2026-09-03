@@ -5,7 +5,7 @@ dotenv.config();
 
 /**
  * Repoints stored asset URLs at a new API host —
- * `npm run db:rewrite-urls -- https://orvida.onrender.com https://api.orvida.in`
+ * `npm run db:rewrite-urls -- https://orvida.onrender.com https://api.orivida.in`
  *
  * Uploaded images are stored in Postgres but referenced by absolute URL, so
  * moving the API leaves those references pointing at the old host. Anything
@@ -40,7 +40,7 @@ const COLUMNS = [
 const run = async () => {
   if (!from || !to) {
     console.error('\nUsage: npm run db:rewrite-urls -- <old-origin> <new-origin> [--dry-run]');
-    console.error('  e.g. npm run db:rewrite-urls -- https://orvida.onrender.com https://api.orvida.in\n');
+    console.error('  e.g. npm run db:rewrite-urls -- https://orvida.onrender.com https://api.orivida.in\n');
     await pool.end();
     process.exit(1);
   }

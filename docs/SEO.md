@@ -137,7 +137,7 @@ are refused.
 | `VITE_SITE_URL` | client build | Canonical origin for meta tags and JSON-LD |
 | `VITE_API_BASE_URL` | client build | API origin |
 
-Both default to `https://orvida.in` if unset. No domain is hardcoded anywhere
+Both default to `https://orivida.in` if unset. No domain is hardcoded anywhere
 else.
 
 ---
@@ -163,7 +163,7 @@ than needing separate calls.
 
 ## 8. Google Search Console
 
-1. Search Console → add property → `https://orvida.in` → **HTML tag** method.
+1. Search Console → add property → `https://orivida.in` → **HTML tag** method.
 2. Copy the `content` value from the tag it shows.
 3. Admin → Site Content → SEO → Google integrations → **Search Console
    verification** → paste → Save.

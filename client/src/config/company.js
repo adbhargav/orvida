@@ -21,7 +21,7 @@ export const COMPANY = {
   phone: '+91 70957 56434',
   phoneHref: 'tel:+917095756434',
   whatsapp: 'https://wa.me/917095756434',
-  email: 'support@orvida.com',
+  email: 'support@orivida.in',
 };
 
 export const companyAddressLines = () => {

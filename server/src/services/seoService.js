@@ -8,7 +8,7 @@ import { query } from '../config/db.js';
  * between the product and category controllers.
  */
 
-export const SITE_URL = (process.env.SITE_URL || 'https://orvida.in').replace(/\/+$/, '');
+export const SITE_URL = (process.env.SITE_URL || 'https://orivida.in').replace(/\/+$/, '');
 
 /** Canonical URL for a path. Strips query strings and duplicate slashes. */
 export const getCanonicalUrl = (path = '/') => {

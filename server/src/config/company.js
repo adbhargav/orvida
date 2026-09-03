@@ -24,8 +24,8 @@ export const COMPANY = {
   },
 
   phone: process.env.COMPANY_PHONE || '+91 70957 56434',
-  email: process.env.COMPANY_EMAIL || 'support@orvida.com',
-  website: process.env.COMPANY_WEBSITE || 'orvida.in',
+  email: process.env.COMPANY_EMAIL || 'support@orivida.in',
+  website: process.env.COMPANY_WEBSITE || 'orivida.in',
 
   // Tax identifiers are rendered only when configured, so an invoice never
   // shows a placeholder or another business's number.

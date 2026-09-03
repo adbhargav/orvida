@@ -9,7 +9,7 @@
 export const POLICIES = {
   'privacy-policy': {
     title: 'Privacy Policy',
-    body: `ORIVIDA ("we", "our") respects your privacy. This policy explains what information we collect when you use orvida.in and our services, and how we use and protect it.
+    body: `ORIVIDA ("we", "our") respects your privacy. This policy explains what information we collect when you use orivida.in and our services, and how we use and protect it.
 
 ## Information we collect
 
@@ -32,11 +32,11 @@ export const POLICIES = {
 
 ## Your rights
 
-You may request a copy of the personal data we hold about you, ask us to correct it, or ask us to delete your account and associated data. Write to us at support@orvida.com and we will respond within a reasonable time.
+You may request a copy of the personal data we hold about you, ask us to correct it, or ask us to delete your account and associated data. Write to us at support@orivida.in and we will respond within a reasonable time.
 
 ## Contact
 
-ORIVIDA, 3-4-610/1, Narayanguda, Hyderabad, Telangana 500029, India · support@orvida.com · +91 70957 56434`,
+ORIVIDA, 3-4-610/1, Narayanguda, Hyderabad, Telangana 500029, India · support@orivida.in · +91 70957 56434`,
   },
 
   'terms-and-conditions': {
@@ -71,7 +71,7 @@ These terms are governed by the laws of India. Any dispute is subject to the jur
 
 ## Contact
 
-Questions about these terms: support@orvida.com · +91 70957 56434`,
+Questions about these terms: support@orivida.in · +91 70957 56434`,
   },
 
   'shipping-policy': {
@@ -100,7 +100,7 @@ As soon as your shipment is created you receive an AWB (tracking) number on the 
 
 ## Damaged parcels
 
-If a parcel arrives visibly damaged, please photograph it before opening and contact us at support@orvida.com within 48 hours.`,
+If a parcel arrives visibly damaged, please photograph it before opening and contact us at support@orivida.in within 48 hours.`,
   },
 
   'refund-policy': {
@@ -125,7 +125,7 @@ Handcrafted items may be returned within 7 days of delivery if they arrive damag
 
 ## How to raise a request
 
-Email support@orvida.com with your order number, photographs where relevant, and a short description. We respond within 2 business days.`,
+Email support@orivida.in with your order number, photographs where relevant, and a short description. We respond within 2 business days.`,
   },
 };
 

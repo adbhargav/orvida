@@ -62,8 +62,8 @@ const DEV_ORIGINS = [
 // list, but the production frontend must never depend on a dashboard env var
 // being remembered.
 const PROD_ORIGINS = [
-  'https://orvida.in',
-  'https://www.orvida.in',
+  'https://orivida.in',
+  'https://www.orivida.in',
   'https://orvida.vercel.app',
 ];
 

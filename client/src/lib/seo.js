@@ -10,7 +10,7 @@ import { SEO_DEFAULTS } from '../config/siteContentDefaults';
  * default. Nothing here ever returns undefined or null.
  */
 
-export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://orvida.in').replace(/\/+$/, '');
+export const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://orivida.in').replace(/\/+$/, '');
 
 /** Absolute, query-free canonical URL for a route path. */
 export const getCanonicalUrl = (path = '/') => {

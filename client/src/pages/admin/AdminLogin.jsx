@@ -91,7 +91,7 @@ export default function AdminLogin({ currentUser }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-emerald-darker border border-emerald-default rounded-md px-4 py-3 text-sm text-white placeholder:text-emerald-light/40 focus:outline-none focus:border-gold-mid transition"
-              placeholder="you@orvida.com"
+              placeholder="you@orivida.in"
             />
           </div>
 

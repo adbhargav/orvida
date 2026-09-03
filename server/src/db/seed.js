@@ -202,7 +202,7 @@ export const seedDatabase = async () => {
       `INSERT INTO users (name, email, password_hash, is_admin, member_since)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (email) DO UPDATE SET is_admin = TRUE`,
-      ['Master Atelier Admin', 'admin@orvida.com', adminPasswordHash, true, 'August 2025']
+      ['Master Atelier Admin', 'admin@orivida.in', adminPasswordHash, true, 'August 2025']
     );
     await pool.query(
       `INSERT INTO users (name, email, password_hash, is_admin, member_since)

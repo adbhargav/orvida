@@ -12,7 +12,7 @@ dotenv.config();
  * is an argument; the password is prompted for rather than read from argv,
  * which would leave it in the shell history:
  *
- *   npm run admin:password -- admin@orvida.com
+ *   npm run admin:password -- admin@orivida.in
  */
 
 const ask = (prompt) =>

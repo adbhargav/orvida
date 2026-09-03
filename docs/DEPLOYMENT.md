@@ -1,12 +1,12 @@
 # Deploying the ORIVIDA API to a VPS
 
-The backend runs on the VPS at **`api.orvida.in`**. The storefront stays on
-Vercel at `orvida.in` and talks to it over HTTPS.
+The backend runs on the VPS at **`api.orivida.in`**. The storefront stays on
+Vercel at `orivida.in` and talks to it over HTTPS.
 
 ```
-browser ──► orvida.in (Vercel, static build)
+browser ──► orivida.in (Vercel, static build)
               │
-              └─ fetch ──► api.orvida.in (nginx :443 ─► node :5001) ──► Postgres
+              └─ fetch ──► api.orivida.in (nginx :443 ─► node :5001) ──► Postgres
 ```
 
 nginx also fronts `/sitemap.xml` and `/robots.txt`, which Vercel rewrites to
@@ -23,7 +23,7 @@ You need:
   native `fetch`.
 - A Postgres database. Either keep the managed Neon one you already use — no
   migration needed, it is the same database — or run Postgres on the VPS.
-- An **A record** for `api.orvida.in` pointing at the VPS IP. Set this up
+- An **A record** for `api.orivida.in` pointing at the VPS IP. Set this up
   first; certbot cannot issue a certificate until it resolves.
 
 ---
@@ -72,8 +72,8 @@ bite you if wrong:
 | Variable | Value | Why |
 |---|---|---|
 | `JWT_SECRET` | 48+ random bytes | **The server refuses to boot in production without it.** Changing it later signs every existing session out. |
-| `CLIENT_URL` | `https://orvida.in` | The API rejects any browser origin not listed here or in `ADDITIONAL_ORIGINS`. Get it wrong and every request from the storefront fails CORS. |
-| `PUBLIC_ASSET_URL` | `https://api.orvida.in` | Every uploaded-image URL is built from this. A localhost or `http://` value produces mixed-content images that browsers block. |
+| `CLIENT_URL` | `https://orivida.in` | The API rejects any browser origin not listed here or in `ADDITIONAL_ORIGINS`. Get it wrong and every request from the storefront fails CORS. |
+| `PUBLIC_ASSET_URL` | `https://api.orivida.in` | Every uploaded-image URL is built from this. A localhost or `http://` value produces mixed-content images that browsers block. |
 | `DELHIVERY_PICKUP_NAME` | exactly as registered | Case-sensitive. A mismatch fails with *"ClientWarehouse matching query does not exist"*. |
 
 ---
@@ -81,12 +81,12 @@ bite you if wrong:
 ## 4. nginx and TLS
 
 ```bash
-sudo cp deploy/nginx/api.orvida.in.conf /etc/nginx/sites-available/api.orvida.in
-sudo ln -s /etc/nginx/sites-available/api.orvida.in /etc/nginx/sites-enabled/
+sudo cp deploy/nginx/api.orivida.in.conf /etc/nginx/sites-available/api.orivida.in
+sudo ln -s /etc/nginx/sites-available/api.orivida.in /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
 sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d api.orvida.in
+sudo certbot --nginx -d api.orivida.in
 ```
 
 certbot rewrites the config to add the TLS block and a redirect from `:80`,
@@ -129,8 +129,8 @@ Use one or the other, never both — they will fight over the port.
 Verify:
 
 ```bash
-curl -s https://api.orvida.in/api/health
-curl -sI https://api.orvida.in/sitemap.xml | head -3
+curl -s https://api.orivida.in/api/health
+curl -sI https://api.orivida.in/sitemap.xml | head -3
 ```
 
 ---
@@ -145,21 +145,21 @@ moment it stops serving:
 
 ```bash
 npm --prefix server run db:rewrite-urls -- \
-  https://orvida.onrender.com https://api.orvida.in --dry-run
+  https://orvida.onrender.com https://api.orivida.in --dry-run
 npm --prefix server run db:rewrite-urls -- \
-  https://orvida.onrender.com https://api.orvida.in
+  https://orvida.onrender.com https://api.orivida.in
 ```
 
 **2. Rebuild the storefront.** `client/.env.production` and both
-`vercel.json` files already point at `api.orvida.in`; Vercel picks that up on
+`vercel.json` files already point at `api.orivida.in`; Vercel picks that up on
 the next deploy of `main`.
 
 **3. Move the Razorpay webhook** in the dashboard to
-`https://api.orvida.in/api/payments/webhook/razorpay`, keeping the same
+`https://api.orivida.in/api/payments/webhook/razorpay`, keeping the same
 signing secret.
 
 **4. Update the Firebase reset-email action URL** to
-`https://orvida.in/reset-password`.
+`https://orivida.in/reset-password`.
 
 **5. Keep Render running** until the new host has served real traffic, then
 delete the service. Do not delete it first — the old image URLs are live until
@@ -218,7 +218,7 @@ npm --prefix server run db:clean-demo -- --dry-run
 npm --prefix server run db:clean-demo
 
 # make sure you can still sign in
-npm --prefix server run admin:password -- admin@orvida.in
+npm --prefix server run admin:password -- admin@orivida.in
 ```
 
 `db:clean-demo` deletes test orders, test accounts, sample coupons, the
@@ -288,5 +288,5 @@ The cost is a few MB in the database.
 ```bash
 pm2 logs orvida-api --lines 100
 sudo tail -f /var/log/nginx/orvida-api.error.log
-curl -s https://api.orvida.in/api/health
+curl -s https://api.orivida.in/api/health
 ```

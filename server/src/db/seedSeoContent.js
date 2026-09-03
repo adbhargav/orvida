@@ -171,7 +171,7 @@ const run = async () => {
     organizationDescription:
       'Hand-nurtured rare botanicals, bespoke plant hampers and heritage Bastar bell metal craft, delivered across India.',
     organizationPhone: '+91 70957 56434',
-    organizationEmail: 'support@orvida.com',
+    organizationEmail: 'support@orivida.in',
     organizationAddress: '3-4-610/1, Narayanguda, Hyderabad, Telangana 500029, India',
   };
   const merged = { ...defaults, ...current };
