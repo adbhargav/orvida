@@ -18,8 +18,16 @@ const isDryRun = process.argv.includes('--dry-run');
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const [from, to] = args;
 
-// Columns that can hold a URL to something this API serves.
+// Columns that can hold a URL to something this API serves, or a canonical
+// pointing at the storefront. Canonicals matter as much as images: after a
+// domain change, one left behind tells search engines the page's real home is
+// a domain you no longer own.
 const COLUMNS = [
+  ['products', 'canonical_url'],
+  ['categories', 'canonical_url'],
+  ['subcategories', 'canonical_url'],
+  ['seo_pages', 'canonical_url'],
+  ['blog_posts', 'canonical_url'],
   ['banners', 'image'],
   ['banners', 'mobile_image'],
   ['categories', 'image'],
