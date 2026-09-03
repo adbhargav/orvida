@@ -31,6 +31,7 @@ const COLUMNS = [
   ['banners', 'image'],
   ['banners', 'mobile_image'],
   ['categories', 'image'],
+  ['categories', 'banner'],
   ['categories', 'og_image'],
   ['subcategories', 'image'],
   ['subcategories', 'og_image'],

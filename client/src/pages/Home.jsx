@@ -66,19 +66,19 @@ export default function Home() {
       if (catRes.status === 'fulfilled') {
         // The collection rail is built from real subcategories and their own
         // imagery, rather than a hard-coded list of stock photographs.
-        // No image filter: a collection with no artwork still shows (with a
-        // placeholder) rather than silently vanishing from the rail.
-        const rail = (catRes.value.categories || []).flatMap((cat) =>
-          (cat.subcategories || [])
-            .map((sub) => ({
-              key: `${cat.slug}-${sub.slug}`,
-              name: sub.name,
-              image: sub.image,
-              link: `/category/${cat.slug}/${sub.slug}`,
-            }))
-        );
-        // Every subcategory with imagery, across all categories — capping this
-        // list used to hide everything beyond the first category.
+        //
+        // The top-level categories, not their subcategories: this rail is the
+        // front door, so it should show the four departments a visitor is
+        // choosing between, not the dozen shelves inside them.
+        //
+        // No image filter — a category with no artwork still appears, with its
+        // initial as a placeholder, rather than silently vanishing.
+        const rail = (catRes.value.categories || []).map((cat) => ({
+          key: cat.slug,
+          name: cat.name,
+          image: cat.image,
+          link: `/category/${cat.slug}`,
+        }));
         setCollections(rail);
       }
 
