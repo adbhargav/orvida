@@ -16,7 +16,9 @@
     "seo:seed": "node src/db/seedSeoContent.js",
     "db:clean-demo": "node src/db/cleanDemoData.js",
     "admin:password": "node src/db/setAdminPassword.js",
-    "db:rewrite-urls": "node src/db/rewriteAssetUrls.js"
+    "db:rewrite-urls": "node src/db/rewriteAssetUrls.js",
+    "db:export": "node src/db/exportCatalogue.js",
+    "db:seed-catalogue": "node src/db/seedCatalogue.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

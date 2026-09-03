@@ -167,6 +167,49 @@ step 1 is applied and Vercel has rebuilt.
 
 ---
 
+## 6b. Seeding a fresh database
+
+If the server runs its own Postgres rather than the managed one, bring it up
+from the committed snapshot — no access to the old database required:
+
+```bash
+npm --prefix server run db:seed-catalogue
+```
+
+That applies `schema.sql`, then `migrations.sql`, then `catalogue.sql`, and
+realigns every sequence. It reports what landed:
+
+```
+352 products · 352 images · 4 categories · 17 subcategories · 2 banners · 6 uploaded files
+```
+
+`catalogue.sql` is a committed snapshot of store content — products, images
+(the uploaded file bytes included), categories, banners, site content and SEO
+templates. It holds **no customers, orders or carts**, so it is safe to keep
+in the repository and safe to re-run.
+
+It refuses to run against a database that already has orders, unless you pass
+`--force`, because it replaces the catalogue wholesale.
+
+No admin account is created. Make one:
+
+```bash
+npm --prefix server run admin:password -- you@example.com
+```
+
+**Do not use `npm run db:init`.** That is the original prototype seed — 24
+placeholder products with stock photography — and it truncates the banners
+table. It is kept only for scratch local databases.
+
+**Refreshing the snapshot.** After changing the catalogue through the admin
+panel, re-export from the database that has the changes and commit the result:
+
+```bash
+npm --prefix server run db:export
+```
+
+---
+
 ## 7. Going live
 
 ```bash
