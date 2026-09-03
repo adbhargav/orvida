@@ -71,12 +71,18 @@ export default function Home() {
         // front door, so it should show the four departments a visitor is
         // choosing between, not the dozen shelves inside them.
         //
-        // No image filter — a category with no artwork still appears, with its
-        // initial as a placeholder, rather than silently vanishing.
+        // Categories carry no thumbnail of their own yet, so fall back through
+        // their banner and then to the first subcategory that has artwork —
+        // a real photograph beats a letter in a circle. A category with none
+        // still appears, with its initial, rather than vanishing.
         const rail = (catRes.value.categories || []).map((cat) => ({
           key: cat.slug,
           name: cat.name,
-          image: cat.image,
+          image:
+            cat.image ||
+            cat.banner ||
+            (cat.subcategories || []).find((sub) => sub.image)?.image ||
+            '',
           link: `/category/${cat.slug}`,
         }));
         setCollections(rail);
@@ -234,7 +240,7 @@ export default function Home() {
         <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-20 animate-fadeIn">
           <SectionHeading eyebrow="Shop by collection" title="Explore the catalogue" href="/category/plants" />
 
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-8">
             {collections.map((cat) => (
               <Link key={cat.key} to={cat.link} className="group text-center">
                 <div className="aspect-square rounded-full overflow-hidden border border-line group-hover:border-emerald-default transition-colors duration-300 mb-3 bg-emerald-subtle">
@@ -251,7 +257,7 @@ export default function Home() {
                     </span>
                   )}
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-ink group-hover:text-emerald-default transition-colors">
+                <span className="text-sm sm:text-base font-medium text-ink group-hover:text-emerald-default transition-colors">
                   {cat.name}
                 </span>
               </Link>
