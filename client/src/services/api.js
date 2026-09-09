@@ -1,7 +1,27 @@
 // ORVIDA Frontend API Service Layer
 
 const RAW_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
-export const API_BASE_URL = RAW_BASE.replace(/\/+$/, '');
+
+/**
+ * Guarantees the base URL is absolute.
+ *
+ * A value with no scheme — "api.orivida.in/api" — is a relative path to the
+ * browser, so every call silently becomes "<storefront>/api.orivida.in/api/…".
+ * On a SPA host that rewrite returns index.html with a 200, so nothing errors:
+ * the app just renders empty forever. Vercel's dashboard variables override
+ * the committed .env.production, which is exactly how a scheme goes missing.
+ *
+ * A leading "/" is left alone — that is a deliberate same-origin proxy.
+ */
+const absoluteBase = (value) => {
+  const base = value.trim();
+  if (/^https?:\/\//i.test(base) || base.startsWith('/')) return base;
+  // Local hosts do not serve TLS in development.
+  const scheme = /^(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(base) ? 'http' : 'https';
+  return `${scheme}://${base}`;
+};
+
+export const API_BASE_URL = absoluteBase(RAW_BASE).replace(/\/+$/, '');
 
 /* ------------------------------------------------------------------ *
  * Auth token helpers
