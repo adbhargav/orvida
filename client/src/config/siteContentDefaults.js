@@ -95,12 +95,46 @@ export const ABOUT_PAGE_DEFAULTS = {
 };
 
 /** Deep-ish merge: saved scalars win, arrays win wholesale when present. */
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+/**
+ * A saved value that arrived as a JSON-encoded string — an array flattened to
+ * text by a careless database edit, say — is recovered rather than rejected.
+ */
+const parseIfEncoded = (value) => {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!/^[[{]/.test(trimmed)) return value;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+};
+
+/**
+ * Overlays saved content on its defaults, one field at a time.
+ *
+ * The defaults define the shape. A saved field only replaces its default when
+ * it has the same kind — an array for an array, an object for an object — so
+ * a malformed document degrades to the defaults for the bad fields instead of
+ * crashing every page that renders it. Nothing here throws.
+ */
 export const mergeContent = (defaults, saved) => {
   if (!saved || typeof saved !== 'object') return defaults;
   const merged = { ...defaults };
-  for (const [key, value] of Object.entries(saved)) {
-    if (value === undefined || value === null || value === '') continue;
-    if (Array.isArray(value) && value.length === 0) continue;
+  for (const [key, raw] of Object.entries(saved)) {
+    if (raw === undefined || raw === null || raw === '') continue;
+    const fallback = defaults[key];
+    const value = Array.isArray(fallback) || isPlainObject(fallback) ? parseIfEncoded(raw) : raw;
+
+    if (Array.isArray(fallback)) {
+      if (!Array.isArray(value) || value.length === 0) continue;
+    } else if (isPlainObject(fallback)) {
+      if (!isPlainObject(value)) continue;
+    } else if (Array.isArray(value) && value.length === 0) {
+      continue;
+    }
     merged[key] = value;
   }
   return merged;
