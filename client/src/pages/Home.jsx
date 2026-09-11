@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, Leaf, Award, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Leaf, Award, ShieldCheck, Sparkles, Star, Clock } from 'lucide-react';
 import ProductCard from '../components/product/ProductCard';
 import QuickViewModal from '../components/product/QuickViewModal';
 import { api } from '../services/api';
@@ -39,6 +39,7 @@ export default function Home() {
   const [collections, setCollections] = useState([]);
   const [slides, setSlides] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [brandStory, setBrandStory] = useState(HOME_BRAND_STORY_DEFAULTS);
   const [seo, setSeo] = useState(SEO_DEFAULTS);
   const [ready, setReady] = useState(false);
@@ -51,12 +52,13 @@ export default function Home() {
     let cancelled = false;
 
     (async () => {
-      const [prodRes, catRes, bannerRes, reviewRes, contentRes] = await Promise.allSettled([
+      const [prodRes, catRes, bannerRes, reviewRes, contentRes, blogRes] = await Promise.allSettled([
         api.products.getAll({ limit: 24 }),
         api.categories.getAll(),
         api.banners.getAll(),
         api.reviews.getRecent(3),
         api.content.get('home_brand_story', 'seo_settings'),
+        api.blog.list({ limit: 3 }),
       ]);
 
       if (cancelled) return;
@@ -101,6 +103,7 @@ export default function Home() {
       }
 
       if (reviewRes.status === 'fulfilled') setReviews(reviewRes.value.reviews || []);
+      if (blogRes.status === 'fulfilled') setPosts(blogRes.value.posts || []);
 
       if (contentRes.status === 'fulfilled') {
         setBrandStory(mergeContent(HOME_BRAND_STORY_DEFAULTS, contentRes.value.content?.home_brand_story));
@@ -332,6 +335,49 @@ export default function Home() {
           </p>
           <Link to="/gifting-concierge" className="inline-block text-sm text-emerald-default link-underline">
             Speak to the concierge
+          </Link>
+        </section>
+      )}
+
+      {/* Journal — the latest articles. Omitted entirely until one is
+          published, so the homepage never advertises an empty blog. */}
+      {posts.length > 0 && (
+        <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pb-16 sm:pb-20 animate-fadeIn">
+          <SectionHeading eyebrow="From the journal" title="Notes on living with plants" href="/blog" linkLabel="All articles" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
+            {posts.map((post) => (
+              <Link key={post.id} to={`/blog/${post.slug}`} className="group block space-y-3">
+                <div className="aspect-[4/3] overflow-hidden bg-emerald-subtle">
+                  {post.featured_image ? (
+                    <img
+                      src={post.featured_image}
+                      alt={post.image_alt_text || post.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center type-display text-4xl text-emerald-default/30">
+                      {post.title.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+                  {post.category && (
+                    <span className="text-emerald-default uppercase tracking-[0.12em]">{post.category}</span>
+                  )}
+                  <span className="inline-flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {post.reading_minutes || 1} min read
+                  </span>
+                </div>
+                <h3 className="type-heading text-lg text-ink group-hover:text-emerald-default transition-colors">
+                  {post.title}
+                </h3>
+                {post.excerpt && <p className="text-sm text-ink-soft leading-relaxed line-clamp-2">{post.excerpt}</p>}
+              </Link>
+            ))}
+          </div>
+          <Link to="/blog" className="sm:hidden inline-flex items-center gap-1.5 mt-8 text-sm text-emerald-default link-underline">
+            All articles <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </section>
       )}
