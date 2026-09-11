@@ -83,7 +83,7 @@ export default function BlogIndex() {
         pagination: res.pagination || { page: 1, pages: 1, total: 0 },
       });
     } catch (err) {
-      setError(err.message || 'Could not load the journal.');
+      setError(err.message || 'Could not load the blog.');
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ export default function BlogIndex() {
   useEffect(() => { setSearchDraft(search); }, [search]);
 
   usePageMeta({
-    title: buildTitle('Journal — plant care guides & stories', seoSettings),
+    title: buildTitle('Blog — plant care guides & stories', seoSettings),
     description:
       'Care guides, growing notes and stories from the ORIVIDA studio — how to choose, place and keep living things thriving at home.',
     canonical: getCanonicalUrl('/blog'),
@@ -106,7 +106,7 @@ export default function BlogIndex() {
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Blog',
-      name: `${seoSettings.siteName || 'ORIVIDA'} Journal`,
+      name: `${seoSettings.siteName || 'ORIVIDA'} Blog`,
       url: getCanonicalUrl('/blog'),
       blogPost: (data.posts || []).slice(0, 10).map((post) => ({
         '@type': 'BlogPosting',
@@ -116,7 +116,7 @@ export default function BlogIndex() {
         ...(post.featured_image ? { image: absoluteUrl(post.featured_image) } : {}),
       })),
     },
-    breadcrumbs: generateBreadcrumbSchema([{ name: 'Journal' }]),
+    breadcrumbs: generateBreadcrumbSchema([{ name: 'Blog' }]),
   });
 
   const setFilter = (patch) => {
@@ -144,7 +144,7 @@ export default function BlogIndex() {
     <div className="bg-canvas">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-10 sm:py-16 space-y-10">
         <header className="text-center space-y-3 max-w-2xl mx-auto">
-          <span className="type-eyebrow text-emerald-default">The ORIVIDA Journal</span>
+          <span className="type-eyebrow text-emerald-default">The ORIVIDA Blog</span>
           <h1 className="type-display text-3xl sm:text-[2.75rem] text-ink leading-tight">
             Notes on living with plants
           </h1>
@@ -184,7 +184,7 @@ export default function BlogIndex() {
             <Search className="w-4 h-4 text-ink-faint absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="search" value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)}
-              placeholder="Search the journal" aria-label="Search the journal"
+              placeholder="Search the blog" aria-label="Search the blog"
               className="w-full pl-10 pr-3.5 py-2.5 border border-line bg-white text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:border-emerald-default transition"
             />
           </form>
@@ -202,7 +202,7 @@ export default function BlogIndex() {
         {loading ? (
           <div className="py-24 flex flex-col items-center gap-3 text-ink-soft">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <p className="text-sm">Loading the journal…</p>
+            <p className="text-sm">Loading the blog…</p>
           </div>
         ) : error ? (
           <div className="py-24 text-center space-y-3">
@@ -212,7 +212,7 @@ export default function BlogIndex() {
         ) : posts.length === 0 ? (
           <div className="py-24 text-center space-y-3">
             <h2 className="type-heading text-xl text-ink">
-              {isFiltered ? 'Nothing here yet' : 'The journal is just getting started'}
+              {isFiltered ? 'Nothing here yet' : 'The blog is just getting started'}
             </h2>
             <p className="text-sm text-ink-soft max-w-md mx-auto">
               {isFiltered

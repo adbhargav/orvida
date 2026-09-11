@@ -339,11 +339,11 @@ export default function Home() {
         </section>
       )}
 
-      {/* Journal — the latest articles. Omitted entirely until one is
+      {/* Blog — the latest articles. Omitted entirely until one is
           published, so the homepage never advertises an empty blog. */}
       {posts.length > 0 && (
         <section className="max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-12 pb-16 sm:pb-20 animate-fadeIn">
-          <SectionHeading eyebrow="From the journal" title="Notes on living with plants" href="/blog" linkLabel="All articles" />
+          <SectionHeading eyebrow="From the blog" title="Notes on living with plants" href="/blog" linkLabel="All articles" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
             {posts.map((post) => (
               <Link key={post.id} to={`/blog/${post.slug}`} className="group block space-y-3">

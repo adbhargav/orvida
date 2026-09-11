@@ -76,7 +76,7 @@ function AppContent() {
             <Route path="/gifting-concierge" element={<GiftingConcierge />} />
             <Route path="/about" element={<About />} />
             {/* Declared above the catch-all "/:slug" so a landing page can
-                never shadow the journal. */}
+                never shadow the blog. */}
             <Route path="/blog" element={<BlogIndex />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/policies/:slug" element={<PolicyPage />} />

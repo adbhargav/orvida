@@ -92,7 +92,7 @@ export default function BlogPost() {
           type: 'article',
           jsonLd: buildArticleSchema(post, description, seoSettings),
           breadcrumbs: generateBreadcrumbSchema([
-            { name: 'Journal', path: '/blog' },
+            { name: 'Blog', path: '/blog' },
             { name: post.title },
           ]),
         }
@@ -125,7 +125,7 @@ export default function BlogPost() {
           to="/blog"
           className="px-8 py-3.5 bg-emerald-default hover:bg-emerald-deep text-white text-[11px] uppercase tracking-[0.16em] transition-colors"
         >
-          Back to the journal
+          Back to the blog
         </Link>
       </div>
     );
@@ -139,7 +139,7 @@ export default function BlogPost() {
         <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-2 text-xs text-ink-soft mb-8">
           <Link to="/" className="hover:text-emerald-default transition-colors">Home</Link>
           <ChevronRight className="w-3 h-3 text-ink-faint" />
-          <Link to="/blog" className="hover:text-emerald-default transition-colors">Journal</Link>
+          <Link to="/blog" className="hover:text-emerald-default transition-colors">Blog</Link>
           <ChevronRight className="w-3 h-3 text-ink-faint" />
           <span className="text-ink truncate max-w-[50vw]">{post.title}</span>
         </nav>

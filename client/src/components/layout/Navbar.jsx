@@ -280,7 +280,7 @@ export default function Navbar() {
               to="/blog"
               className="py-3.5 text-[11px] uppercase tracking-[0.16em] text-white/75 hover:text-white transition-colors"
             >
-              Journal
+              Blog
             </Link>
           </div>
 
@@ -503,7 +503,7 @@ export default function Navbar() {
               {[
                 { to: '/gifting-concierge', label: 'Bespoke Gifting' },
                 { to: '/about', label: 'Our Story' },
-                { to: '/blog', label: 'Journal' },
+                { to: '/blog', label: 'Blog' },
                 { to: '/wishlist', label: 'Wishlist' },
                 { to: user ? '/account' : '/login', label: user ? 'Your Orders' : 'Sign In' },
               ].map((item) => (
