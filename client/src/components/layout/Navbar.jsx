@@ -173,12 +173,18 @@ export default function Navbar() {
             </div>
 
             {/* Logo — the whole bar is its brand-green ground */}
-            <Link to="/" className="justify-self-center" aria-label="ORIVIDA home">
+            <Link to="/" className="justify-self-center relative inline-block" aria-label="ORIVIDA home">
               <img
                 src={logoImg}
                 alt="ORIVIDA"
                 className="h-14 sm:h-[68px] w-auto object-contain"
               />
+              <span
+                aria-hidden="true"
+                className="absolute top-1 sm:top-1.5 -right-4 sm:-right-5 text-[13px] sm:text-[15px] leading-none font-semibold text-gold-mid select-none"
+              >
+                ™
+              </span>
             </Link>
 
             {/* Right */}
